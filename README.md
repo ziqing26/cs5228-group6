@@ -30,12 +30,16 @@ Then open the notebooks:
 
 - `notebooks/01_eda.ipynb` explores the raw datasets.
 - `notebooks/02_auxiliary_data_investigation.ipynb` assesses the supplied external datasets.
-- `notebooks/03_data_preprocessing.ipynb` builds the core model-ready files in
-  `data/processed/core/`.
-- `notebooks/04_auxiliary_data_preprocessing.ipynb` adds the recommended HDB and
-  open-MRT features and writes the merged files to `data/processed/hdb_mrt/`.
-- `notebooks/05_ridge_baseline.ipynb` evaluates the regularized linear baseline with
-  chronological validation and produces in-memory test predictions.
+- `notebooks/03_data_preprocessing.ipynb` removes raw and normalization-induced
+  exact duplicates, audits feature duplicates, and builds the core model-ready
+  files in `data/processed/core/`.
+- `notebooks/04_auxiliary_data_preprocessing.ipynb` adds HDB features and a
+  conservative pre-2021 MRT-network proxy, then collapses duplicate training
+  feature vectors by mean rent and writes the result to `data/processed/hdb_mrt/`.
+- `notebooks/05_ridge_baseline.ipynb` evaluates both the core and core + HDB/MRT
+  variants using expanding chronological validation. Fold-specific preprocessing
+  learns rare categories only from each fold's training months and writes two test
+  prediction files.
 
 The notebooks find the repository data whether JupyterLab is launched from the
 repository root or from the `notebooks/` directory. Run the preprocessing notebooks
@@ -61,7 +65,16 @@ data/processed/
     └── test_hdb_mrt_features.csv
 ```
 
-## Generate the Ridge baseline submission
+## Ridge baseline submissions
+
+Running `notebooks/05_ridge_baseline.ipynb` writes:
+
+```text
+submissions/ridge_baseline_core.csv
+submissions/ridge_baseline_hdb_mrt.csv
+```
+
+## Generate a Ridge submission from the command line
 
 After the files in `data/processed/hdb_mrt/` have been generated, run from the
 repository root:
