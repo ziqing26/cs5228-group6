@@ -25,5 +25,9 @@ With the `cs5228` environment active, start JupyterLab:
 jupyter lab
 ```
 
-Then open `notebooks/eda.ipynb`. The notebook finds `data/train.csv` whether JupyterLab is launched from the repository root or from the `notebooks/` directory.
+Then open either notebook:
 
+- `notebooks/eda.ipynb` explores the raw datasets.
+- `notebooks/data_preprocessing.ipynb` builds the model-ready files in `data/processed/`.
+
+Both notebooks find the repository data whether JupyterLab is launched from the repository root or from the `notebooks/` directory. Run the preprocessing notebook from top to bottom after activating the environment.
