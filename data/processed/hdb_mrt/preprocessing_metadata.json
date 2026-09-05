@@ -3,12 +3,12 @@
   "row_id": "ROW_ID",
   "date_column": "RENT_DATE",
   "source_processed_files": [
-    "train_preprocessed.csv",
-    "test_preprocessed.csv"
+    "core/train_preprocessed.csv",
+    "core/test_preprocessed.csv"
   ],
   "output_files": [
-    "train_preprocessed_hdb_mrt.csv",
-    "test_preprocessed_hdb_mrt.csv"
+    "hdb_mrt/train_preprocessed.csv",
+    "hdb_mrt/test_preprocessed.csv"
   ],
   "hdb_join_rate": {
     "train": 1.0,
