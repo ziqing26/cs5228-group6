@@ -3,7 +3,7 @@
 
 This script reproduces the final model in ``notebooks/ridge_baseline.ipynb``:
 
-* core property, location, and time features only;
+* feature columns loaded from the preprocessing metadata;
 * fold-safe numeric imputation/scaling and sparse categorical one-hot encoding;
 * Ridge regression with alpha=10, selected by expanding-window validation.
 
@@ -28,27 +28,11 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_TRAIN_PATH = PROJECT_ROOT / "data/processed/train_preprocessed.csv"
-DEFAULT_TEST_PATH = PROJECT_ROOT / "data/processed/test_preprocessed.csv"
-DEFAULT_METADATA_PATH = PROJECT_ROOT / "data/processed/preprocessing_metadata.json"
+DEFAULT_TRAIN_PATH = PROJECT_ROOT / "data/processed/hdb_mrt/train_preprocessed.csv"
+DEFAULT_TEST_PATH = PROJECT_ROOT / "data/processed/hdb_mrt/test_preprocessed.csv"
+DEFAULT_METADATA_PATH = PROJECT_ROOT / "data/processed/hdb_mrt/preprocessing_metadata.json"
 DEFAULT_SAMPLE_PATH = PROJECT_ROOT / "data/example-submission.csv"
-DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "submissions/ridge_baseline.csv"
-
-CATEGORICAL_FEATURES = [
-    "TOWN",
-    "STREET",
-    "FLAT_TYPE",
-    "FLAT_MODEL_GROUPED",
-    "PROPERTY_KEY",
-]
-NUMERIC_FEATURES = [
-    "FLOOR_AREA_SQM",
-    "LEASE_AGE_AT_RENT",
-    "MONTH_INDEX",
-    "MONTH_SIN",
-    "MONTH_COS",
-]
-FEATURES = CATEGORICAL_FEATURES + NUMERIC_FEATURES
+DEFAULT_OUTPUT_PATH = PROJECT_ROOT / "submissions/ridge_baseline_hdb_mrt.csv"
 
 
 def parse_args() -> argparse.Namespace:
@@ -76,7 +60,34 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def build_pipeline(alpha: float, min_category_frequency: int) -> Pipeline:
+def get_feature_columns(metadata: dict) -> tuple[list[str], list[str]]:
+    """Load the ordered feature contract from preprocessing metadata."""
+    features = metadata.get("model_features")
+    categorical_features = metadata.get("categorical_features")
+    if not isinstance(features, list) or not features:
+        raise ValueError("Metadata must contain a non-empty model_features list")
+    if not isinstance(categorical_features, list):
+        raise ValueError("Metadata must contain a categorical_features list")
+    if len(features) != len(set(features)):
+        raise ValueError("Metadata model_features contains duplicate columns")
+
+    unknown_categorical = sorted(set(categorical_features) - set(features))
+    if unknown_categorical:
+        raise ValueError(
+            f"Categorical columns are absent from model_features: {unknown_categorical}"
+        )
+    numeric_features = [
+        feature for feature in features if feature not in set(categorical_features)
+    ]
+    return categorical_features.copy(), numeric_features
+
+
+def build_pipeline(
+    alpha: float,
+    min_category_frequency: int,
+    categorical_features: list[str],
+    numeric_features: list[str],
+) -> Pipeline:
     """Build the preprocessing and Ridge pipeline used by the notebook."""
     if alpha < 0:
         raise ValueError("--alpha must be non-negative")
@@ -104,8 +115,8 @@ def build_pipeline(alpha: float, min_category_frequency: int) -> Pipeline:
     )
     preprocessor = ColumnTransformer(
         [
-            ("numeric", numeric_pipeline, NUMERIC_FEATURES),
-            ("categorical", categorical_pipeline, CATEGORICAL_FEATURES),
+            ("numeric", numeric_pipeline, numeric_features),
+            ("categorical", categorical_pipeline, categorical_features),
         ]
     )
     return Pipeline(
@@ -125,10 +136,11 @@ def validate_inputs(
     sample: pd.DataFrame,
     target: str,
     row_id: str,
+    features: list[str],
 ) -> None:
     """Fail early when processed data or the submission contract has changed."""
-    required_train = set(FEATURES + [target, row_id])
-    required_test = set(FEATURES + [row_id])
+    required_train = set(features + [target, row_id])
+    required_test = set(features + [row_id])
     missing_train = sorted(required_train - set(train.columns))
     missing_test = sorted(required_test - set(test.columns))
     if missing_train or missing_test:
@@ -165,12 +177,22 @@ def create_submission(args: argparse.Namespace) -> Path:
     train = pd.read_csv(args.train)
     test = pd.read_csv(args.test)
     sample = pd.read_csv(args.sample_submission)
-    validate_inputs(train, test, sample, target, row_id)
+    categorical_features, numeric_features = get_feature_columns(metadata)
+    features = categorical_features + numeric_features
+    validate_inputs(train, test, sample, target, row_id, features)
 
-    print(f"Training Ridge(alpha={args.alpha:g}) on {len(train):,} rows and {len(FEATURES)} features...")
-    pipeline = build_pipeline(args.alpha, args.min_category_frequency)
-    pipeline.fit(train[FEATURES], train[target])
-    predictions = pipeline.predict(test[FEATURES])
+    print(
+        f"Training Ridge(alpha={args.alpha:g}) on {len(train):,} rows with "
+        f"{len(categorical_features)} categorical and {len(numeric_features)} numeric features..."
+    )
+    pipeline = build_pipeline(
+        args.alpha,
+        args.min_category_frequency,
+        categorical_features,
+        numeric_features,
+    )
+    pipeline.fit(train[features], train[target])
+    predictions = pipeline.predict(test[features])
 
     prediction_by_id = pd.Series(predictions, index=test[row_id], name="Predicted")
     submission = sample[["Id"]].copy()
