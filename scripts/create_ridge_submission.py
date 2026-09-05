@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Train the documented Ridge baseline and create a competition submission.
 
-This script reproduces the final model in ``notebooks/ridge_baseline.ipynb``:
+This script reproduces the final model in ``notebooks/05_ridge_baseline.ipynb``:
 
 * feature columns loaded from the preprocessing metadata;
 * fold-safe numeric imputation/scaling and sparse categorical one-hot encoding;

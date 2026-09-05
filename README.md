@@ -18,7 +18,7 @@ To update an existing environment after `environment.yml` changes:
 conda env update -f environment.yml --prune
 ```
 
-## Run the notebook
+## Run the notebooks
 
 With the `cs5228` environment active, start JupyterLab:
 
@@ -28,19 +28,19 @@ jupyter lab
 
 Then open the notebooks:
 
-- `notebooks/eda.ipynb` explores the raw datasets.
-- `notebooks/data_preprocessing.ipynb` builds the core model-ready files in
+- `notebooks/01_eda.ipynb` explores the raw datasets.
+- `notebooks/02_auxiliary_data_investigation.ipynb` assesses the supplied external datasets.
+- `notebooks/03_data_preprocessing.ipynb` builds the core model-ready files in
   `data/processed/core/`.
-- `notebooks/auxiliary_data_investigation.ipynb` assesses the supplied external datasets.
-- `notebooks/auxiliary_data_preprocessing.ipynb` adds the recommended HDB and
+- `notebooks/04_auxiliary_data_preprocessing.ipynb` adds the recommended HDB and
   open-MRT features and writes the merged files to `data/processed/hdb_mrt/`.
-- `notebooks/ridge_baseline.ipynb` evaluates the regularized linear baseline with
+- `notebooks/05_ridge_baseline.ipynb` evaluates the regularized linear baseline with
   chronological validation and produces in-memory test predictions.
 
 The notebooks find the repository data whether JupyterLab is launched from the
-repository root or from the `notebooks/` directory. Run the preprocessing notebook
-from top to bottom before training a model. Run `data_preprocessing.ipynb` first,
-then `auxiliary_data_preprocessing.ipynb`.
+repository root or from the `notebooks/` directory. Run the preprocessing notebooks
+from top to bottom before training a model. Run `03_data_preprocessing.ipynb` first,
+then `04_auxiliary_data_preprocessing.ipynb`.
 
 ## Processed data layout
 
