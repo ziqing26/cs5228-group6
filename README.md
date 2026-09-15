@@ -37,9 +37,10 @@ Then open the notebooks:
   conservative pre-2021 MRT-network proxy, then collapses duplicate training
   feature vectors by mean rent and writes the result to `data/processed/hdb_mrt/`.
 - `notebooks/05_ridge_baseline.ipynb` evaluates both the core and core + HDB/MRT
-  variants using expanding chronological validation. Fold-specific preprocessing
-  learns rare categories only from each fold's training months and writes two test
-  prediction files.
+  variants on identical individual core rows using expanding chronological
+  validation. It joins uncollapsed auxiliary features by `ROW_ID` and `RENT_DATE`,
+  preserving original targets for training and evaluation. Each fold learns its
+  own preprocessing and rare categories. The notebook writes two prediction files.
 
 The notebooks find the repository data whether JupyterLab is launched from the
 repository root or from the `notebooks/` directory. Run the preprocessing notebooks
@@ -75,6 +76,10 @@ submissions/ridge_baseline_hdb_mrt.csv
 ```
 
 ## Generate a Ridge submission from the command line
+
+The script below still uses the collapsed HDB/MRT training file. Run the notebook
+to reproduce the fair comparison on individual rows. Running this script afterward
+overwrites the auxiliary submission with the legacy variant's predictions.
 
 After the files in `data/processed/hdb_mrt/` have been generated, run from the
 repository root:
