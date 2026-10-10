@@ -1,6 +1,6 @@
 % CS5228 Group 6: English final-report structure.
 % Based on the supplied IEEE conference template.
-% Main report prose is complete; team workload remains to be confirmed.
+% Main report and appendix contributions are complete.
 % Replace every prompt and TBD before submission. Keep the course layout.
 % Main-text budget (including title, abstract, tables and figures):
 % Title/abstract 0.4; Introduction 0.6; Data 0.4; EDA/preprocessing 1.4;
@@ -28,10 +28,18 @@
 \makeatother
 \usepackage[hidelinks]{hyperref}
 
+% Centre the abstract heading on its own line instead of the inline IEEE label.
+\makeatletter
+\renewenvironment{abstract}{%
+  \normalfont\normalsize
+  {\centering\scshape\abstractname\par}\nobreak\smallskip\noindent\ignorespaces
+}{\par\normalfont\normalsize}
+\makeatother
+
 % Writing prompts are visible during drafting. Replace them with report prose.
 % Set \outlinefalse only after adding complete prose, figures and results.
 \newif\ifoutline
-\outlinetrue
+\outlinefalse
 \newcommand{\guide}[1]{%
   \ifoutline\par\noindent{\small\color{blue!65!black}%
   \textit{Writing prompt: #1}}\par\fi}
@@ -44,11 +52,33 @@
 \title{Predicting Singapore HDB Rental Prices under Temporal Distribution Shift}
 % Revise the title if the completed experiments support a different emphasis.
 \author{%
-  \IEEEauthorblockN{Ox Alpha (Group 6)}
-  \IEEEauthorblockA{%
-    Li Chengxuan (A0352428A), Mao Huanqing (A0257997Y)\\
-    Sun Zekun (A0351314R), Zhang Ziqing (A0223145R)\\
-    National University of Singapore}
+  \IEEEauthorblockN{Li Chengxuan}
+  \IEEEauthorblockA{A0352428A\\
+    \textit{National University}\\
+    \textit{of Singapore}\\
+    Singapore\\
+    li.chengxuan@u.nus.edu}
+  \and
+  \IEEEauthorblockN{Mao Huanqing}
+  \IEEEauthorblockA{A0257997Y\\
+    \textit{National University}\\
+    \textit{of Singapore}\\
+    Singapore\\
+    huanqing.mao@u.nus.edu}
+  \and
+  \IEEEauthorblockN{Sun Zekun}
+  \IEEEauthorblockA{A0351314R\\
+    \textit{National University}\\
+    \textit{of Singapore}\\
+    Singapore\\
+    zekunsun@u.nus.edu}
+  \and
+  \IEEEauthorblockN{Zhang Ziqing}
+  \IEEEauthorblockA{A0223145R\\
+    \textit{National University}\\
+    \textit{of Singapore}\\
+    Singapore\\
+    e0564186@u.nus.edu}
 }
 
 \begin{document}
@@ -837,32 +867,116 @@ our ideas, analysis and model selections are original.
 \appendices
 \section{Team Workload Breakdown}
 \label{app:workload}
-\guide{Record actual completed contributions. The names, IDs and team name
-come from the supplied progress slides. Confirm them before submission.
-Only Sun Zekun's core-preprocessing responsibility is prefilled from the
-conversation; complete all other entries from the team's actual workload.}
+All members contributed to discussion and outline development for both the
+project work and the report. Table~\ref{tab:workload} records their principal
+implementation and writing responsibilities.
 \begin{localtable}
   \caption{Team workload and report contributions. Student IDs appear in the author block.}
   \label{tab:workload}
   \centering\small
   \begin{tabularx}{\columnwidth}{lXX}
     \toprule
-    Member & Project responsibilities & Report contributions \\
+    Member & Project work & Report writing \\
     \midrule
-    Li Chengxuan & \pending & \pending \\
-    Mao Huanqing & \pending & \pending \\
-    Sun Zekun & Core data preprocessing; other tasks \pending & Core preprocessing; other tasks \pending \\
-    Zhang Ziqing & \pending & \pending \\
+    Li Chengxuan & Data preprocessing and EDA & Section III \\
+    Mao Huanqing & Model development and evaluation & Sections IV and V \\
+    Sun Zekun & Data preprocessing and EDA & Sections I and II \\
+    Zhang Ziqing & Model development and evaluation & Sections VI and VII \\
     \bottomrule
   \end{tabularx}
 \end{localtable}
 
 \section{Supplementary Details}
 \label{app:supplement}
-\guide{Use sparingly. Include only the full hyperparameter search/configuration
-table, a compact feature dictionary, or supplementary EDA/error tables that
-help reproduce or elaborate the main results. Do not move the final model
-definition, validation design, main results or essential interpretation out
-of the main text. The paper must remain comprehensible without this appendix.}
+The following tables expand the completed model-search and error analyses.
+They use the saved outputs of the CatBoost model, MLP model and final
+evaluation workflows. All errors are in SGD. Selection-window RMSEs use
+original individual rents; their mean gives equal weight to the two windows.
+
+\subsection{Complete CatBoost Parameter Search}
+Table~\ref{tab:fullgrid} reports all 20 base-feature configurations, extending
+the tuning summary in Section~\ref{sec:improvements}. Depth 8, learning rate
+0.05 and leaf regularisation 3 gave the lowest mean RMSE. The shared
+500-tree cap constrained the smaller learning rates; comparisons therefore
+reflect this training budget as well as the parameters.
+\begin{localtable}
+  \caption{Full CatBoost grid on 35 base inputs. H2 2023 and H1 2024 denote the two selection windows; bold marks the selected configuration.}
+  \label{tab:fullgrid}
+  \centering\small
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabularx}{\columnwidth}{Xrrrrr}
+    \toprule
+Depth & Rate & $L_2$ & H2 2023 & H1 2024 & Mean \\
+    \midrule
+6 & 0.001 & 3 & 786.437 & 687.158 & 736.797 \\
+6 & 0.001 & 5 & 786.077 & 687.033 & 736.555 \\
+6 & 0.005 & 3 & 602.940 & 532.974 & 567.957 \\
+6 & 0.005 & 5 & 602.621 & 532.385 & 567.503 \\
+6 & 0.01 & 3 & 585.469 & 523.610 & 554.540 \\
+6 & 0.01 & 5 & 585.954 & 523.524 & 554.739 \\
+6 & 0.05 & 3 & 578.450 & 516.883 & 547.667 \\
+6 & 0.05 & 5 & 577.611 & 517.235 & 547.423 \\
+6 & 0.08 & 3 & 581.135 & 517.112 & 549.123 \\
+6 & 0.08 & 5 & 579.294 & 517.606 & 548.450 \\
+8 & 0.001 & 3 & 779.461 & 681.108 & 730.285 \\
+8 & 0.001 & 5 & 780.174 & 681.074 & 730.624 \\
+8 & 0.005 & 3 & 598.690 & 528.631 & 563.661 \\
+8 & 0.005 & 5 & 599.438 & 529.691 & 564.565 \\
+8 & 0.01 & 3 & 582.704 & 520.734 & 551.719 \\
+8 & 0.01 & 5 & 583.940 & 521.102 & 552.521 \\
+\textbf{8} & \textbf{0.05} & \textbf{3} & \textbf{578.121} & \textbf{516.622} & \textbf{547.372} \\
+8 & 0.05 & 5 & 578.219 & 517.865 & 548.042 \\
+8 & 0.08 & 3 & 579.539 & 517.778 & 548.659 \\
+8 & 0.08 & 5 & 577.731 & 518.402 & 548.067 \\
+    \bottomrule
+  \end{tabularx}
+\end{localtable}
+
+\subsection{MLP Seed Stability}
+Table~\ref{tab:mlpseeds} expands the seed-stability comparison. Seed 42 was
+fixed for model selection; the other seeds are diagnostics and were not
+used to choose a best seed. The spread in mean RMSE limits general claims
+about neural-network performance from this small search.
+\begin{localtable}
+  \caption{MLP RMSE by seed with the same 35 base inputs and training protocol.}
+  \label{tab:mlpseeds}
+  \centering\small
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabularx}{\columnwidth}{Xrrr}
+    \toprule
+Seed & H2 2023 & H1 2024 & Mean \\
+    \midrule
+42 & 618.967 & 601.005 & 609.986 \\
+123 & 657.652 & 605.046 & 631.349 \\
+2026 & 653.828 & 624.986 & 639.407 \\
+    \bottomrule
+  \end{tabularx}
+\end{localtable}
+
+\subsection{Selected-Model Errors by Flat Type}
+Table~\ref{tab:flaterrors} provides the complete flat-type breakdown underlying
+Section~\ref{sec:results}. Counts sum to the 25,984 original later-block
+observations. Bias is actual minus predicted rent, so a positive value
+indicates underprediction. The ten one-room records are insufficient for
+a broad subgroup conclusion; the comparisons do not adjust for other
+property or time characteristics.
+\begin{localtable}
+  \caption{CatBoost flat-type errors, July 2024--March 2025.}
+  \label{tab:flaterrors}
+  \centering\small
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabularx}{\columnwidth}{Xrrrr}
+    \toprule
+Flat type & Rows & RMSE & MAE & Bias \\
+    \midrule
+1-room & 10 & 383.268 & 347.280 & 163.618 \\
+2-room & 708 & 437.930 & 313.642 & 41.791 \\
+3-room & 8,562 & 432.547 & 322.921 & 16.766 \\
+4-room & 9,468 & 462.564 & 336.209 & 8.207 \\
+5-room & 5,927 & 469.357 & 334.601 & 7.833 \\
+Executive & 1,309 & 551.020 & 406.853 & 40.654 \\
+    \bottomrule
+  \end{tabularx}
+\end{localtable}
 
 \end{document}

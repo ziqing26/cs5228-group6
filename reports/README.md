@@ -14,7 +14,7 @@ experiment execution and the result files supporting each report section.
 Main-text tables are placed at their relevant discussions. References and the
 appendix start on separate pages, outside the eight-page main-text limit.
 
-The workload appendix still contains visible prompts and TBD entries. Confirm
-actual responsibilities and contributions with the team before submission;
-these details cannot be established from model results. The supplementary
-appendix is optional and should be completed or removed before submission.
+Appendix A records the team's shared discussion/outline work and individual
+project and report responsibilities. Appendix B includes the complete CatBoost
+parameter grid, MLP seed-stability results and selected-model flat-type errors
+from the saved notebook experiment outputs.

@@ -264,8 +264,6 @@ These sections refer to the same procedure rather than separate experiments.
 
 Remaining qualifications to keep visible before submission:
 
-- The team workload appendix contains unconfirmed responsibilities and TBDs;
-  the optional supplementary appendix still contains a drafting prompt.
 - The original Ridge baseline uses a deduplicated validation population;
   its scores must stay separate from the final report's common-population table.
 - The long-horizon diagnostic overlaps the selection and later blocks, and the
