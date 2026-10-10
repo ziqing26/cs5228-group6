@@ -1,0 +1,6 @@
+{
+  "policy": "keep_all",
+  "imputation": "block_recovery",
+  "selection_rule": "Within 1 SGD of best early-fold mean RMSE, prefer keep_all then exact_only; prefer masking/recovery when within 0.1 SGD of best imputation.",
+  "mean_RMSE": 600.8081251689713
+}

@@ -1,0 +1,13 @@
+model,policy,imputation,group,params,fold,RMSE,MAE,bias_actual_minus_predicted,selected_iterations,train_rows,evaluation_rows,seconds
+catboost,keep_all,block_recovery,base,"{""depth"": 6, ""l2_leaf_reg"": 3, ""learning_rate"": 0.08}",2023_H2,581.1345597738051,461.4686524296651,36.825905630465925,249,87937,17900,17.283108042000094
+catboost,keep_all,block_recovery,base,"{""depth"": 6, ""l2_leaf_reg"": 3, ""learning_rate"": 0.08}",2024_H1,517.1124203967993,383.0943019936967,-46.8330750809824,373,105837,18179,29.34779858300317
+catboost,keep_all,block_recovery,base,"{""depth"": 8, ""l2_leaf_reg"": 5, ""learning_rate"": 0.05}",2023_H2,578.2189682593967,456.9729385332669,21.66921205193542,261,87937,17900,23.763351790999877
+catboost,keep_all,block_recovery,base,"{""depth"": 8, ""l2_leaf_reg"": 5, ""learning_rate"": 0.05}",2024_H1,517.8646796584768,382.5923388702495,-56.77015208646141,409,105837,18179,43.69129604200134
+catboost,keep_all,block_recovery,schools,"{""depth"": 8, ""l2_leaf_reg"": 5, ""learning_rate"": 0.05}",2023_H2,578.0002985964059,456.17414276466576,17.492092348005272,285,87937,17900,27.005566749998252
+catboost,keep_all,block_recovery,schools,"{""depth"": 8, ""l2_leaf_reg"": 5, ""learning_rate"": 0.05}",2024_H1,517.3019454333436,382.65487196797346,-52.18346707975103,313,105837,18179,33.99556083299831
+catboost,keep_all,block_recovery,malls,"{""depth"": 8, ""l2_leaf_reg"": 5, ""learning_rate"": 0.05}",2023_H2,577.6593999981611,455.8740463021793,16.02100831073001,339,87937,17900,30.370267332997173
+catboost,keep_all,block_recovery,malls,"{""depth"": 8, ""l2_leaf_reg"": 5, ""learning_rate"": 0.05}",2024_H1,517.2512208506972,382.6732565781109,-50.491322255349466,383,105837,18179,40.941818167004385
+catboost,keep_all,block_recovery,schools_malls,"{""depth"": 8, ""l2_leaf_reg"": 5, ""learning_rate"": 0.05}",2023_H2,577.510678675657,455.7353905235701,15.893767992516137,314,87937,17900,29.02833437499794
+catboost,keep_all,block_recovery,schools_malls,"{""depth"": 8, ""l2_leaf_reg"": 5, ""learning_rate"": 0.05}",2024_H1,516.6811645515667,383.6162093692377,-41.79178524729643,292,105837,18179,32.421299499997986
+catboost,keep_all,block_recovery,history,"{""depth"": 8, ""l2_leaf_reg"": 5, ""learning_rate"": 0.05}",2023_H2,577.2789860736898,454.2618706438711,8.922900690313355,244,87937,17900,23.82647087499936
+catboost,keep_all,block_recovery,history,"{""depth"": 8, ""l2_leaf_reg"": 5, ""learning_rate"": 0.05}",2024_H1,515.2025813503587,382.19498185574764,-45.49536220002628,321,105837,18179,36.42192675000115

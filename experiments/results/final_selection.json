@@ -1,0 +1,15 @@
+{
+  "model": "catboost",
+  "params": {
+    "depth": 8,
+    "l2_leaf_reg": 5,
+    "learning_rate": 0.05
+  },
+  "group": "history",
+  "policy": "keep_all",
+  "imputation": "block_recovery",
+  "mean_RMSE": 546.2407837120243,
+  "feature_selection_rule": "Minimum earlier-fold mean RMSE; retain base if improvement <1 SGD.",
+  "seed_policy": "MLP uses predeclared seed 42; other seeds are stability diagnostics.",
+  "selection_basis": "earlier folds only; final block is diagnostic, not used to switch winners"
+}

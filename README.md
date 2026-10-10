@@ -66,6 +66,35 @@ data/processed/
     └── test_hdb_mrt_features.csv
 ```
 
+## Improvement experiments
+
+Notebooks 01–05 are preserved. Run the new notebooks in order:
+
+- `06_preprocessing_audit.ipynb` compares training duplicate policies and
+  fold-fitted block recovery, with identical individual validation records.
+- `07_feature_experiments.ipynb` evaluates Ridge with schools, malls, and
+  strictly historical rental features.
+- `08_catboost_model.ipynb` evaluates CatBoost and the same feature ablations.
+- `09_mlp_model.ipynb` evaluates an MLP with chronological epoch selection and
+  three seeds for stability.
+- `10_final_evaluation.ipynb` freezes the earlier-fold winner, evaluates the
+  latest block and a longer horizon, and writes a separate improved submission.
+
+Update the environment using the setup command above before running these
+notebooks. Shared implementation lives in `experiments/rental_experiments.py`;
+experiment scores, policy decisions, and diagnostics go to `experiments/results/`.
+Existing processed data and baseline submissions are not overwritten.
+
+To execute the new notebooks from the repository root:
+
+```bash
+python scripts/run_improvement_notebooks.py
+```
+
+Use `--start 8 --end 9` to rerun a subset after its prerequisite results exist.
+The experiment plan is in `NEXT_STEPS.md`; findings and limitations are documented
+in `reports/improvement_report.md`.
+
 ## Ridge baseline submissions
 
 Running `notebooks/05_ridge_baseline.ipynb` writes:

@@ -1,0 +1,12 @@
+{
+  "model": "mlp",
+  "params": {
+    "random_state": 42
+  },
+  "group": "base",
+  "policy": "keep_all",
+  "imputation": "block_recovery",
+  "mean_RMSE": 609.985917722512,
+  "feature_selection_rule": "Minimum earlier-fold mean RMSE; retain base if improvement <1 SGD.",
+  "seed_policy": "MLP uses predeclared seed 42; other seeds are stability diagnostics."
+}
