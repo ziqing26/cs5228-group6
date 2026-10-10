@@ -159,15 +159,17 @@ We assess prediction error primarily with root mean squared error (RMSE) in
 SGD; the evaluation protocol is specified in Section~\ref{sec:experiments}.
 
 \subsection{Auxiliary Data Sources}
-Six supplied auxiliary datasets cover HDB block metadata, Mass Rapid Transit
-(MRT) stations, schools, shopping malls, Certificate of Entitlement
-(COE)~\cite{coe_background} prices, and stock prices for major Singapore
-companies~\cite{company_directory}. Addresses and coordinates support building attributes and amenity features. The selected
-feature set combines core and HDB/MRT features. School, mall and
-training-only rental-history additions were evaluated but excluded under the
-current selection rule. COE and stock features
-were excluded because future observations are unavailable at the prediction
-cutoff. Historical snapshot limitations are discussed in Section~\ref{sec:eda}.
+The course supplied six auxiliary datasets: HDB block metadata, Mass Rapid
+Transit (MRT) stations, schools, shopping malls, Certificate of Entitlement
+(COE) auction prices, and stock prices for Singapore companies. Building
+attributes and coordinates support address joins and spatial features;
+the COE and stock tables contain dated market observations.
+
+Our analyses used the supplied CSV files. The COE explanation
+\cite{coe_background} and company-ranking page \cite{company_directory}
+linked in the project description provide background rather than additional
+data collected for this study. Section~\ref{sec:auxiliary_processing} explains
+how we processed these sources and decided which features to retain.
 
 % Keep the data summary before figures from the following section.
 \FloatBarrier
@@ -233,6 +235,7 @@ Rent per square metre was used only for EDA because it contains the target.
 \end{figure}
 
 \subsection{Core Cleaning and Feature Construction}
+\label{sec:core_features}
 We applied Unicode NFKC normalisation, lowercasing, and whitespace cleanup
 to categorical fields, removed spaces within block identifiers, and merged
 equivalent labels such as \field{4 room} and \field{4-room}. Flat-type
@@ -247,6 +250,13 @@ keys for address resolution, an ordered flat-type code, lease age, its
 invalidity flag, and $\log(1+\text{floor area})$ alongside raw area.
 These transformations give 19 core predictors. Original row IDs and parsed
 dates remain alignment and validation fields, not model inputs.
+
+We also tested four rental-history fields derived from the labelled core
+records: past mean rent and observation count for town/flat-type pairs and
+for properties. Training histories exclude the current month and all later
+months. Validation and test histories use only known training rents, with
+summaries held fixed throughout each prediction window. These are candidate
+features derived from rental records, not external auxiliary data.
 
 Table~\ref{tab:preprocessing} summarises the cleaning decisions. We checked
 the uncertain choices through the preprocessing audit below rather than
@@ -360,6 +370,7 @@ The final pipeline therefore retains all 150,000 training records and every
 one of the 50,000 test IDs.
 
 \subsection{Auxiliary Construction and Record Integrity}
+\label{sec:auxiliary_processing}
 The 9,464 HDB block records have unique normalised town, block, and street
 keys, with 100\% address coverage in train and test. A many-to-one join adds
 coordinates, maximum floor, completion year, postal sector, subzone, planning
@@ -376,23 +387,21 @@ Haversine distances yield the nearest-station distance and counts within
 similarly and tested as separate feature groups. They were excluded from the
 selected configuration; their snapshots also lack opening histories.
 
-We inspected the supplied Certificate of Entitlement (COE) and stock-price
-tables, linked in the project description to COE background
-\cite{coe_background} and a Singapore company ranking
-\cite{company_directory}. Their cleaned observations were aggregated by
-calendar month and shifted by one month. Neither source entered the final
-forecasting model: a lag does not establish availability of market observations
-throughout the future prediction horizon. We collected no additional data.
+We cleaned the COE and stock observations, aggregated them by calendar month,
+and applied a one-month lag. Although the supplied files include market
+observations covering test-period rental months, our forecasting evaluation
+uses a fixed prediction cutoff. Later market observations are not treated
+as information known at that cutoff. A lagged feature for a distant forecast
+can still require these observations, so both market feature groups were
+excluded from the final model.
 
-The feature experiments augment the 35 core/HDB/MRT inputs with four
-rental-history fields: past mean rent and count for town/flat-type pairs and
-for properties.
-For training rows, histories exclude the current month and all later months.
-Validation and test histories use only rents known in their training data.
-This candidate has 39 predictors; the current selected model retains the
-35-input base configuration (Section~\ref{sec:finalmodel}). Joins check key uniqueness,
-row counts, and matching IDs/dates so that adding features cannot silently
-change the evaluation population.
+The base configuration contains 35 predictors: 19 core fields and sixteen
+HDB/MRT fields. Adding the four rental-history fields described in
+Section~\ref{sec:core_features} gives a 39-input candidate. The selected model
+retains the 35-input base configuration, as specified in
+Section~\ref{sec:finalmodel}. Joins check key uniqueness, row counts, and
+matching IDs/dates so that feature construction preserves the evaluation
+population.
 
 \section{Data Mining Methods and Model Development}
 \label{sec:methods}
