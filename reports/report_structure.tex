@@ -1,6 +1,6 @@
 % CS5228 Group 6: English final-report structure.
 % Based on the supplied IEEE conference template.
-% Sections I--VI are drafted; abstract, conclusion and appendix remain prompts.
+% Main report prose is complete; team workload remains to be confirmed.
 % Replace every prompt and TBD before submission. Keep the course layout.
 % Main-text budget (including title, abstract, tables and figures):
 % Title/abstract 0.4; Introduction 0.6; Data 0.4; EDA/preprocessing 1.4;
@@ -20,6 +20,12 @@
 \usepackage{tabularx}
 \usepackage{url}
 \usepackage{placeins}
+% Non-floating column tables stay with their discussion and move as one block.
+\makeatletter
+\newenvironment{localtable}{\par\addvspace{\medskipamount}\noindent
+  \begin{minipage}{\columnwidth}\def\@captype{table}}{\end{minipage}\par
+  \addvspace{\medskipamount}}
+\makeatother
 \usepackage[hidelinks]{hyperref}
 
 % Writing prompts are visible during drafting. Replace them with report prose.
@@ -49,12 +55,22 @@
 \maketitle
 
 \begin{abstract}
-\guide{Write approximately 150--180 words after the final experiments are
-complete. State the practical rental-prediction problem, the dataset and
-temporal challenge, the analysis and preprocessing approach, the evaluated
-methods, and the selected final model. Give its verified evaluation results
-and the most important interpretation. Describe completed work in the past
-tense. Do not present progress-report scores as final results.}
+Predicting Singapore HDB rents requires accounting for changing market
+conditions as well as property and location characteristics. We analysed
+150,000 labelled rental records from January 2021 to March 2025 and developed
+features for 50,000 future test records. Exploratory analysis motivated
+category normalisation, invalid-source masking and chronological validation.
+We compared record-handling policies, Ridge regression, CatBoost and a
+multilayer perceptron using two earlier validation windows for selection.
+The selected CatBoost model retained all training records and used 35
+core, HDB and MRT predictors. On 25,984 later observations, it achieved
+RMSE 458.740 SGD and MAE 334.412 SGD, reducing RMSE by 21.21\% relative
+to Ridge. Its mean underprediction was 13.551 SGD. School, mall and
+historical-rent additions did not meet our minimum improvement threshold.
+A 16-month diagnostic also favoured CatBoost, although its observations
+overlapped the other windows. The findings support nonlinear modelling
+and careful temporal evaluation, while snapshot amenities, subgroup errors
+and unavailable future labels limit conclusions about deployment accuracy.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -134,7 +150,7 @@ type, flat model, floor area, furnishing status, lease commencement year and
 upfront fee. All 150,000 training rows are retained; preprocessing is detailed in
 Section~\ref{sec:eda}.
 
-\begin{table}[!ht]
+\begin{localtable}
   \caption{Overview of the supplied rental data.}
   \label{tab:data}
   \centering
@@ -150,7 +166,7 @@ Section~\ref{sec:eda}.
     Final modelling records & 150,000 & 50,000 \\
     \bottomrule
   \end{tabularx}
-\end{table}
+\end{localtable}
 
 As Table~\ref{tab:data} shows, the split is predominantly temporal: only
 380 test records share March 2025 with the training period; all others are
@@ -176,7 +192,7 @@ how we processed these sources and decided which features to retain.
 
 \section{Exploratory Data Analysis and Preprocessing}
 \label{sec:eda}
-% Completed from notebooks 01--04 and 06, and the improvement experiment log.
+% Completed exploratory analysis, preprocessing audits and experiment logs.
 
 \subsection{Target Distribution and Data Quality}
 The 150,000 raw training records contain no missing cells. Monthly rent has
@@ -263,7 +279,7 @@ the uncertain choices through the preprocessing audit below rather than
 assuming that fewer records or more elaborate imputation would improve
 prediction.
 
-\begin{table}[t]
+\begin{localtable}
   \caption{EDA findings and the corresponding preprocessing decisions.}
   \label{tab:preprocessing}
   \centering
@@ -283,11 +299,11 @@ prediction.
     Extreme targets & Retain rents flagged by IQR without evidence of error. \\
     \bottomrule
   \end{tabularx}
-\end{table}
+\end{localtable}
 
 \subsection{Preprocessing Audit and Policy Selection}
 \label{sec:preprocessing_audit}
-The audit in Notebook~06 compared three record policies and two missing-value
+The preprocessing audit compared three record policies and two missing-value
 treatments using Ridge with $\alpha=10$ and the same 35 core/HDB/MRT features.
 Selection used July to December 2023 and January to June 2024, training on
 earlier months in each case. Record policies changed the training data only.
@@ -312,8 +328,8 @@ weight is retained. Its mean RMSE was about 603.96 SGD, compared with about
 600.80 SGD for the other policies. We did not average validation labels under
 any policy.
 
-\begin{table}[t]
-  \caption{Notebook~06 preprocessing audit. Mean RMSE in SGD over the two
+\begin{localtable}
+  \caption{Training-policy and missing-value audit. Mean RMSE in SGD over the two
   earlier selection windows; validation observations are identical for all rows.}
   \label{tab:audit_policies}
   \centering
@@ -327,7 +343,7 @@ any policy.
     Collapse to mean rent & 603.965 & 603.962 \\
     \bottomrule
   \end{tabularx}
-\end{table}
+\end{localtable}
 
 \subsubsection{Invalid values and address recovery}
 Lease age is approval year minus lease commencement year. Ages below zero or
@@ -407,7 +423,7 @@ population.
 \label{sec:methods}
 
 \subsection{Reference Predictor and Ridge Baseline}
-The initial reference in Notebook~05 predicted the historical median rent
+The initial reference predictor used the historical median rent
 for each town/flat-type pair, falling back to the town median, flat-type
 median, and overall training median when necessary. This provides a simple
 location/size reference but does not explicitly represent market changes.
@@ -509,7 +525,7 @@ the nine-month diagnostic block. That block was already examined during
 the original baseline work and is therefore not a completely untouched
 holdout, although its new scores did not trigger model switching.
 
-\begin{table}[t]
+\begin{localtable}
   \caption{Chronological evaluation. Counts refer to original labelled records.}
   \label{tab:folds}
   \centering\small
@@ -523,7 +539,7 @@ holdout, although its new scores did not trigger model switching.
     Long horizon & Jul. 2023--Oct. 2024 & 87,937 & 47,528 \\
     \bottomrule
   \end{tabularx}
-\end{table}
+\end{localtable}
 
 The separate long-horizon diagnostic trained through June 2023 and predicted
 16 months without updating from evaluation rents. This matches the maximum
@@ -557,7 +573,8 @@ budgets limit conclusions about model families, particularly neural networks.
 The recorded seed-42 MLP selected one and two epochs in the earlier folds
 and five epochs in the later diagnostic.
 
-Notebooks~06--10 call the shared implementation in
+The preprocessing audits, feature comparisons, model training and final
+evaluation use the shared implementation in
 \field{experiments/rental_experiments.py}. CSV scores and JSON selections
 record fold sizes, parameters, selected iterations and runtime. The saved
 refit environment records Python 3.11.5, NumPy 1.26.4, pandas 2.1.4,
@@ -572,7 +589,9 @@ seconds for selected CatBoost, and 5.2--8.5 seconds for seed-42 MLP;
 these are observed pipeline runtimes rather than hardware-normalised benchmarks.
 
 \subsection{Metrics and Controlled Comparisons}
-For original rents $y_i$ and predictions $\hat y_i$, we report
+For original rents $y_i$ and predictions $\hat y_i$, we report RMSE,
+the square root of mean squared prediction error~\cite{rmse_reference},
+and MAE:
 \begin{equation}
  \mathrm{RMSE}=\sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i-\hat y_i)^2},
  \quad \mathrm{MAE}=\frac{1}{n}\sum_{i=1}^{n}|y_i-\hat y_i|.
@@ -583,8 +602,8 @@ underprediction. Selection scores are unweighted averages of fold RMSEs,
 whereas later and long-horizon scores are pooled within their respective
 blocks. We calculated later-block $R^2$ from the saved predictions.
 Every new comparison used identical original validation IDs and individual
-rents. Notebook~05's deduplicated population is reported separately rather
-than mixed into these tables. We did not estimate confidence intervals or
+rents. The initial baseline's deduplicated population is excluded from these
+common-population tables. We did not estimate confidence intervals or
 claim statistical significance from small score differences.
 
 \section{Final Results and Discussion}
@@ -600,21 +619,21 @@ the winner. The MLP's later RMSE of 469.729 SGD was close to CatBoost despite
 its weaker earlier result; this change in ranking cautions against judging
 models from one period alone.
 
-\begin{table*}[t]
-  \caption{Common-population comparison, July 2024--March 2025 (25,984 rows).
-  All models use the 35 base features. Reduction is relative to Ridge.}
+\begin{localtable}
+  \caption{July 2024--March 2025 comparison (25,984 original rows).
+  All models use 35 base features. Errors and bias are in SGD.}
   \label{tab:mainresults}
   \centering\small
-  \begin{tabular}{lrrrrr}
+  \begin{tabularx}{\columnwidth}{Xrrrr}
     \toprule
-    Method & RMSE (SGD) & MAE (SGD) & $R^2$ & Bias (SGD) & RMSE reduction (\%) \\
+    Method & RMSE & MAE & $R^2$ & Bias \\
     \midrule
-    Ridge, $\alpha=10$ & 582.264 & 432.274 & 0.201 & $-337.793$ & 0.00 \\
-    MLP, seed 42 & 469.729 & 347.440 & 0.480 & 34.853 & 19.33 \\
-    CatBoost, selected & 458.740 & 334.412 & 0.504 & 13.551 & 21.21 \\
+    Ridge & 582.264 & 432.274 & 0.201 & $-337.793$ \\
+    MLP & 469.729 & 347.440 & 0.480 & 34.853 \\
+    CatBoost & 458.740 & 334.412 & 0.504 & 13.551 \\
     \bottomrule
-  \end{tabular}
-\end{table*}
+  \end{tabularx}
+\end{localtable}
 
 \subsection{Performance across Time Periods}
 Table~\ref{tab:periodresults} shows that CatBoost improved on Ridge in both
@@ -625,7 +644,7 @@ CatBoost's later-period improvement coincided with much smaller aggregate
 bias. This is observed calibration behaviour, not evidence that a particular
 input or mechanism caused the difference.
 
-\begin{table}[t]
+\begin{localtable}
   \caption{RMSE (SGD) by evaluation period. The final row overlaps the others.}
   \label{tab:periodresults}
   \centering\small
@@ -639,7 +658,7 @@ input or mechanism caused the difference.
     16-month diagnostic & 624.419 & --- & 534.106 \\
     \bottomrule
   \end{tabularx}
-\end{table}
+\end{localtable}
 
 At the earlier forecast origin, CatBoost's 16-month RMSE was 534.106 SGD
 versus 624.419 SGD for Ridge, a 14.46\% reduction. Its MAE was 410.923 SGD
@@ -660,7 +679,7 @@ comparison demonstrates that additional predictors do not automatically
 improve forecasting. It does not isolate HDB/MRT's contribution to CatBoost:
 no core-only CatBoost removal experiment was completed.
 
-\begin{table}[t]
+\begin{localtable}
   \caption{Earlier-fold mean RMSE (SGD) at fixed selected parameters.
   CatBoost uses depth 8, learning rate 0.05, regularisation 3; Ridge uses
   $\alpha=10$. Each addition is separate.}
@@ -677,7 +696,7 @@ no core-only CatBoost removal experiment was completed.
     Base + history & 603.998 & 546.482 \\
     \bottomrule
   \end{tabularx}
-\end{table}
+\end{localtable}
 
 \subsection{Error Analysis and Model Interpretation}
 Ridge overpredicted later-block rent by 337.8 SGD on average, with monthly
@@ -747,11 +766,27 @@ inferred from file integrity or the internal diagnostic scores.
 \section{Conclusion}
 \label{sec:conclusion}
 % Approximately 0.3 pages.
-\guide{Answer the research questions using the completed final results.
-Name the selected model, quantify its performance relative to the baseline,
-state which improvements and auxiliary features proved useful, and summarise
-the most important error or limitation. End with the practical interpretation
-of the findings. Do not end with a list of work the team intends to do.}
+Our analysis connected changing rental levels, inconsistent category labels
+and uncertain repeated records to explicit preprocessing and validation
+choices. Retaining potentially legitimate observations and masking invalid
+source attributes preserved the evaluation population; the audit did not
+show a meaningful accuracy gain from address recovery. Among the evaluated
+models, CatBoost with 35 core/HDB/MRT predictors performed best on the two
+selection windows and reduced later-block RMSE from 582.264 to 458.740 SGD
+relative to Ridge, with substantially smaller signed bias. Additional
+school, mall and historical-rent features did not meet the 1 SGD retention
+threshold, so most of the measured improvement came from changing the model.
+The longer diagnostic supported this result across a 16-month horizon,
+but overlapped the other evaluation windows. Larger errors for executive
+flats and sparsely observed properties, incomplete amenity histories and
+unavailable future test labels constrain generalisation. The selected model
+provides a useful attribute-based rental reference whose accuracy must be
+assessed across periods and subgroups as market conditions change.
+
+\section*{AI Declaration}
+We used GPT-6-Sol, GPT-6-Astra and GPT-6.1-Sol for file formatting, grammar
+correction and put up README descriptions for our notebooks. We declare
+our ideas, analysis and model selections are original.
 
 % References begin on a separate page so that the main-text boundary is clear.
 % Check the compiled main text ends within eight pages after replacing prompts.
@@ -792,6 +827,10 @@ of the findings. Do not end with a list of work the team intends to do.}
   scikit-learn developers, ``MLPRegressor.'' [Online]. Available:
   \url{https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html}.
   Accessed: Oct. 10, 2026.
+  \bibitem{rmse_reference}
+  Statistics How To, ``RMSE: Root Mean Square Error.'' [Online]. Available:
+  \url{https://www.statisticshowto.com/probability-and-statistics/regression-analysis/rmse-root-mean-square-error/}.
+  Accessed: Oct. 10, 2026.
 \end{thebibliography}
 
 \clearpage
@@ -802,23 +841,21 @@ of the findings. Do not end with a list of work the team intends to do.}
 come from the supplied progress slides. Confirm them before submission.
 Only Sun Zekun's core-preprocessing responsibility is prefilled from the
 conversation; complete all other entries from the team's actual workload.}
-\begin{table*}[t]
-  \caption{Team workload and report contributions.}
+\begin{localtable}
+  \caption{Team workload and report contributions. Student IDs appear in the author block.}
   \label{tab:workload}
-  \centering
-  \small
-  \begin{tabularx}{\textwidth}{llXX}
+  \centering\small
+  \begin{tabularx}{\columnwidth}{lXX}
     \toprule
-    Member & Student ID & Main project responsibilities & Report contributions \\
+    Member & Project responsibilities & Report contributions \\
     \midrule
-    Li Chengxuan & A0352428A & \pending & \pending \\
-    Mao Huanqing & A0257997Y & \pending & \pending \\
-    Sun Zekun & A0351314R & Core data preprocessing; complete other actual
-    responsibilities & Core preprocessing; complete actual writing/review tasks \\
-    Zhang Ziqing & A0223145R & \pending & \pending \\
+    Li Chengxuan & \pending & \pending \\
+    Mao Huanqing & \pending & \pending \\
+    Sun Zekun & Core data preprocessing; other tasks \pending & Core preprocessing; other tasks \pending \\
+    Zhang Ziqing & \pending & \pending \\
     \bottomrule
   \end{tabularx}
-\end{table*}
+\end{localtable}
 
 \section{Supplementary Details}
 \label{app:supplement}
