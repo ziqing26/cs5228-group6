@@ -1,4 +1,4 @@
-# CS5228 Group 6
+# CS5228 Group 6 Ox Alpha
 
 This repository contains the project datasets, exploratory analysis, preprocessing,
 and chronological model comparisons for Singapore HDB rental prediction.
