@@ -1,6 +1,6 @@
 # Rental baseline improvement report
 
-The earlier-fold selection chose **catboost** with **history** features. On the later diagnostic block its RMSE is **456.445 SGD**, compared with **582.264 SGD** for the new Ridge reference (21.61% RMSE reduction). This comparison uses original individual rent targets and the same validation observations.
+The earlier-fold selection chose **catboost** with **base** features. On the later diagnostic block its RMSE is **458.740 SGD**, compared with **582.264 SGD** for the new Ridge reference (21.21% RMSE reduction). This comparison uses original individual rent targets and the same validation observations.
 
 ## Scope and reproducibility
 
@@ -54,7 +54,7 @@ Across the two earlier validation blocks, 0 source values were recovered. HDB at
 
 ## Model and feature experiments
 
-Ridge tests alpha 10 and 100. CatBoost tests two configurations: depth 6, learning rate 0.08, regularization 3; and depth 8, learning rate 0.05, regularization 5. Its budget is 500 trees with 40-round internal early stopping. CatBoost respects chronological input order and accepts categorical features directly. MLP uses 64 → 32 units, sparse one-hot inputs, standardized numeric inputs and rent targets, batch size 1024, regularization 0.01, and an internal selection budget of 40 epochs with six stale epochs.
+Ridge tests alpha 10 and 100. CatBoost tests a full 20-combination grid: depth [6, 8], learning rate [0.001, 0.005, 0.01, 0.05, 0.08], and L2 regularization [3, 5], including both previously tested configurations. Each combination is evaluated on both earlier chronological folds using base features; the lowest mean RMSE selects parameters before feature ablations. Its budget is 500 trees with 40-round internal early stopping. This fixed budget may disadvantage low learning rates that need more trees. CatBoost respects chronological input order and accepts categorical features directly. MLP uses 64 → 32 units, sparse one-hot inputs, standardized numeric inputs and rent targets, batch size 1024, regularization 0.01, and an internal selection budget of 40 epochs with six stale epochs.
 
 Ridge and CatBoost test schools, malls, both, and historical rental means/counts after choosing parameters on base features. History features use strictly earlier months for training rows and fixed training-cutoff summaries for evaluation rows. They summarize town × flat type and property, with training-only missing-value handling for unseen groups. MLP uses the original 35 features for a controlled model comparison.
 
@@ -72,16 +72,34 @@ Selected feature group: **base**. Selected parameters: `{"alpha": 10}`. Base fea
 
 ### catboost
 
+- base, `{"depth": 6, "l2_leaf_reg": 3, "learning_rate": 0.001}`: mean RMSE **736.797 SGD**.
+- base, `{"depth": 6, "l2_leaf_reg": 3, "learning_rate": 0.005}`: mean RMSE **567.957 SGD**.
+- base, `{"depth": 6, "l2_leaf_reg": 3, "learning_rate": 0.01}`: mean RMSE **554.540 SGD**.
+- base, `{"depth": 6, "l2_leaf_reg": 3, "learning_rate": 0.05}`: mean RMSE **547.667 SGD**.
 - base, `{"depth": 6, "l2_leaf_reg": 3, "learning_rate": 0.08}`: mean RMSE **549.123 SGD**.
+- base, `{"depth": 6, "l2_leaf_reg": 5, "learning_rate": 0.001}`: mean RMSE **736.555 SGD**.
+- base, `{"depth": 6, "l2_leaf_reg": 5, "learning_rate": 0.005}`: mean RMSE **567.503 SGD**.
+- base, `{"depth": 6, "l2_leaf_reg": 5, "learning_rate": 0.01}`: mean RMSE **554.739 SGD**.
+- base, `{"depth": 6, "l2_leaf_reg": 5, "learning_rate": 0.05}`: mean RMSE **547.423 SGD**.
+- base, `{"depth": 6, "l2_leaf_reg": 5, "learning_rate": 0.08}`: mean RMSE **548.450 SGD**.
+- base, `{"depth": 8, "l2_leaf_reg": 3, "learning_rate": 0.001}`: mean RMSE **730.285 SGD**.
+- base, `{"depth": 8, "l2_leaf_reg": 3, "learning_rate": 0.005}`: mean RMSE **563.661 SGD**.
+- base, `{"depth": 8, "l2_leaf_reg": 3, "learning_rate": 0.01}`: mean RMSE **551.719 SGD**.
+- base, `{"depth": 8, "l2_leaf_reg": 3, "learning_rate": 0.05}`: mean RMSE **547.372 SGD**.
+- base, `{"depth": 8, "l2_leaf_reg": 3, "learning_rate": 0.08}`: mean RMSE **548.659 SGD**.
+- base, `{"depth": 8, "l2_leaf_reg": 5, "learning_rate": 0.001}`: mean RMSE **730.624 SGD**.
+- base, `{"depth": 8, "l2_leaf_reg": 5, "learning_rate": 0.005}`: mean RMSE **564.565 SGD**.
+- base, `{"depth": 8, "l2_leaf_reg": 5, "learning_rate": 0.01}`: mean RMSE **552.521 SGD**.
 - base, `{"depth": 8, "l2_leaf_reg": 5, "learning_rate": 0.05}`: mean RMSE **548.042 SGD**.
-- history, `{"depth": 8, "l2_leaf_reg": 5, "learning_rate": 0.05}`: mean RMSE **546.241 SGD**.
-- malls, `{"depth": 8, "l2_leaf_reg": 5, "learning_rate": 0.05}`: mean RMSE **547.455 SGD**.
-- schools, `{"depth": 8, "l2_leaf_reg": 5, "learning_rate": 0.05}`: mean RMSE **547.651 SGD**.
-- schools_malls, `{"depth": 8, "l2_leaf_reg": 5, "learning_rate": 0.05}`: mean RMSE **547.096 SGD**.
+- base, `{"depth": 8, "l2_leaf_reg": 5, "learning_rate": 0.08}`: mean RMSE **548.067 SGD**.
+- history, `{"depth": 8, "l2_leaf_reg": 3, "learning_rate": 0.05}`: mean RMSE **546.482 SGD**.
+- malls, `{"depth": 8, "l2_leaf_reg": 3, "learning_rate": 0.05}`: mean RMSE **547.653 SGD**.
+- schools, `{"depth": 8, "l2_leaf_reg": 3, "learning_rate": 0.05}`: mean RMSE **548.135 SGD**.
+- schools_malls, `{"depth": 8, "l2_leaf_reg": 3, "learning_rate": 0.05}`: mean RMSE **546.985 SGD**.
 
-Selected feature group: **history**. Selected parameters: `{"depth": 8, "l2_leaf_reg": 5, "learning_rate": 0.05}`. Base features are retained if an added group improves mean RMSE by less than 1 SGD.
+Selected feature group: **base**. Selected parameters: `{"depth": 8, "l2_leaf_reg": 3, "learning_rate": 0.05}`. Base features are retained if an added group improves mean RMSE by less than 1 SGD.
 
-With the selected tree configuration, base-feature RMSE is 548.042 SGD and the selected feature-group RMSE is 546.241 SGD. The extra feature gain is 1.801 SGD; most of the improvement over Ridge comes from the model change.
+With the selected tree configuration, base-feature RMSE is 547.372 SGD and the selected feature-group RMSE is 547.372 SGD. The extra feature gain is 0.000 SGD; most of the improvement over Ridge comes from the model change.
 
 ### mlp
 
@@ -94,22 +112,22 @@ Selected feature group: **base**. Selected parameters: `{"random_state": 42}`. B
 ## Final diagnostics and selection
 
 - ridge, final_block: RMSE **582.264 SGD**, MAE **432.274 SGD**, actual-minus-predicted bias **-337.793 SGD** (25,984 observations).
-- catboost, final_block: RMSE **456.445 SGD**, MAE **334.165 SGD**, actual-minus-predicted bias **24.746 SGD** (25,984 observations).
+- catboost, final_block: RMSE **458.740 SGD**, MAE **334.412 SGD**, actual-minus-predicted bias **13.551 SGD** (25,984 observations).
 - mlp, final_block: RMSE **469.729 SGD**, MAE **347.440 SGD**, actual-minus-predicted bias **34.853 SGD** (25,984 observations).
 - ridge, 16_month_backtest: RMSE **624.419 SGD**, MAE **473.995 SGD**, actual-minus-predicted bias **-263.517 SGD** (47,528 observations).
-- catboost, 16_month_backtest: RMSE **532.926 SGD**, MAE **408.465 SGD**, actual-minus-predicted bias **18.972 SGD** (47,528 observations).
+- catboost, 16_month_backtest: RMSE **534.106 SGD**, MAE **410.923 SGD**, actual-minus-predicted bias **30.371 SGD** (47,528 observations).
 
-The earlier-fold winner is **catboost** with **history** features. Its selected early-fold mean RMSE is **546.241 SGD**. The separate submission is `submissions/catboost_improved.csv` and contains 50,000 finite predictions in sample-submission ID order.
+The earlier-fold winner is **catboost** with **base** features. Its selected early-fold mean RMSE is **547.372 SGD**. The separate submission is `submissions/catboost_improved.csv` and contains 50,000 finite predictions in sample-submission ID order.
 
 The longer diagnostic predicts July 2023–October 2024 using data before July 2023. It tests a 16-month horizon and overlaps selection and final blocks; it is an additional diagnostic, not independent evidence or a tuning window.
 
 ### Error patterns
 
 - ridge: monthly signed bias ranges from -422.4 to -183.8 SGD. Among towns with at least 200 final-block records, jurong west has the highest RMSE (635.0 SGD; 1,802 rows).
-- catboost: monthly signed bias ranges from 9.4 to 40.3 SGD. Among towns with at least 200 final-block records, jurong west has the highest RMSE (557.4 SGD; 1,802 rows).
+- catboost: monthly signed bias ranges from -12.2 to 39.3 SGD. Among towns with at least 200 final-block records, jurong west has the highest RMSE (561.0 SGD; 1,802 rows).
 - mlp: monthly signed bias ranges from -17.7 to 116.3 SGD. Among towns with at least 200 final-block records, jurong west has the highest RMSE (577.7 SGD; 1,802 rows).
 
-Ridge overpredicts the final-block rent by 337.8 SGD on average. The selected model underpredicts by 24.7 SGD on average. This calibration difference is worth discussing alongside RMSE. It does not identify a causal reason for rental changes.
+Ridge overpredicts the final-block rent by 337.8 SGD on average. The selected model underpredicts by 13.6 SGD on average. This calibration difference is worth discussing alongside RMSE. It does not identify a causal reason for rental changes.
 
 The MLP needs only one or two selected epochs in this small experiment and varies across seeds. This suggests investigating optimization and temporal calibration before interpreting it as a definitive comparison of neural networks against trees.
 

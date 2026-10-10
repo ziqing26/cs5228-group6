@@ -75,6 +75,9 @@ Notebooks 01–05 are preserved. Run the new notebooks in order:
 - `07_feature_experiments.ipynb` evaluates Ridge with schools, malls, and
   strictly historical rental features.
 - `08_catboost_model.ipynb` evaluates CatBoost and the same feature ablations.
+  It searches all 20 combinations of depths `[6, 8]`, learning rates
+  `[0.001, 0.005, 0.01, 0.05, 0.08]`, and L2 regularization `[3, 5]`
+  on the two chronological folds before testing additional features.
 - `09_mlp_model.ipynb` evaluates an MLP with chronological epoch selection and
   three seeds for stability.
 - `10_final_evaluation.ipynb` freezes the earlier-fold winner, evaluates the

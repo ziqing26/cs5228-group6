@@ -19,6 +19,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.linear_model import Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 from sklearn.neural_network import MLPRegressor
+from sklearn.model_selection import ParameterGrid
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from threadpoolctl import threadpool_limits
@@ -36,6 +37,9 @@ SCHOOLS = ['DIST_TO_NEAREST_SCHOOL_KM', 'SCHOOL_COUNT_WITHIN_500M',
 MALLS = ['DIST_TO_NEAREST_MALL_KM', 'MALL_COUNT_WITHIN_500M', 'MALL_COUNT_WITHIN_1KM']
 HISTORY = ['HIST_TOWN_TYPE_MEAN', 'HIST_TOWN_TYPE_COUNT',
            'HIST_PROPERTY_MEAN', 'HIST_PROPERTY_COUNT']
+CATBOOST_GRID = {'depth': [6, 8],
+                 'learning_rate': [0.001, 0.005, 0.01, 0.05, 0.08],
+                 'l2_leaf_reg': [3, 5]}
 FOLDS = [('2023_H2', '2023-07-01', '2024-01-01'),
          ('2024_H1', '2024-01-01', '2024-07-01')]
 HOLDOUT = ('2024_H2_2025_Q1', '2024-07-01', '2025-04-01')
@@ -375,8 +379,7 @@ def model_experiment(model, configs=None, groups=None):
     choice = settings()
     policy, imputation = choice['policy'], choice['imputation']
     defaults = {'ridge': [{'alpha': a} for a in [10, 100]],
-               'catboost': [dict(depth=6, learning_rate=0.08, l2_leaf_reg=3),
-                            dict(depth=8, learning_rate=0.05, l2_leaf_reg=5)],
+               'catboost': list(ParameterGrid(CATBOOST_GRID)),
                'mlp': [dict(random_state=seed) for seed in [42, 123, 2026]]}
     configs = defaults[model] if configs is None else configs
     rows = []

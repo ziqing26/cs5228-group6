@@ -91,9 +91,13 @@ def write_report():
         '- The final model is frozen using earlier-fold results before final-block '
         'evaluation. Final scores do not trigger winner switching.', '',
         '## Model and feature experiments', '',
-        'Ridge tests alpha 10 and 100. CatBoost tests two configurations: depth 6, '
-        'learning rate 0.08, regularization 3; and depth 8, learning rate 0.05, '
-        'regularization 5. Its budget is 500 trees with 40-round internal early stopping. '
+        'Ridge tests alpha 10 and 100. CatBoost tests a full 20-combination grid: '
+        'depth [6, 8], learning rate [0.001, 0.005, 0.01, 0.05, 0.08], and '
+        'L2 regularization [3, 5], including both previously tested configurations. '
+        'Each combination is evaluated on both earlier chronological folds using base features; '
+        'the lowest mean RMSE selects parameters before feature ablations. '
+        'Its budget is 500 trees with 40-round internal early stopping. '
+        'This fixed budget may disadvantage low learning rates that need more trees. '
         'CatBoost respects chronological input order and accepts categorical features '
         'directly. MLP uses 64 → 32 units, sparse one-hot inputs, standardized numeric '
         'inputs and rent targets, batch size 1024, regularization 0.01, and an '

@@ -1,6 +1,6 @@
 % CS5228 Group 6: English final-report structure.
 % Based on the supplied IEEE conference template.
-% Sections I, II, and III are drafted; later sections remain a writing skeleton.
+% Sections I--VI are drafted; abstract, conclusion and appendix remain prompts.
 % Replace every prompt and TBD before submission. Keep the course layout.
 % Main-text budget (including title, abstract, tables and figures):
 % Title/abstract 0.4; Introduction 0.6; Data 0.4; EDA/preprocessing 1.4;
@@ -163,8 +163,9 @@ Six supplied auxiliary datasets cover HDB block metadata, Mass Rapid Transit
 (MRT) stations, schools, shopping malls, Certificate of Entitlement
 (COE)~\cite{coe_background} prices, and stock prices for major Singapore
 companies~\cite{company_directory}. Addresses and coordinates support building attributes and amenity features. The selected
-feature set combines core, HDB/MRT and training-only rental-history features.
-School and mall features were evaluated but excluded. COE and stock features
+feature set combines core and HDB/MRT features. School, mall and
+training-only rental-history additions were evaluated but excluded under the
+current selection rule. COE and stock features
 were excluded because future observations are unavailable at the prediction
 cutoff. Historical snapshot limitations are discussed in Section~\ref{sec:eda}.
 
@@ -383,227 +384,356 @@ calendar month and shifted by one month. Neither source entered the final
 forecasting model: a lag does not establish availability of market observations
 throughout the future prediction horizon. We collected no additional data.
 
-The final feature set combines the 35 core/HDB/MRT inputs with four rental-history
-fields: past mean rent and count for town/flat-type pairs and for properties.
+The feature experiments augment the 35 core/HDB/MRT inputs with four
+rental-history fields: past mean rent and count for town/flat-type pairs and
+for properties.
 For training rows, histories exclude the current month and all later months.
 Validation and test histories use only rents known in their training data.
-The final contract therefore has 39 predictors. Joins check key uniqueness,
+This candidate has 39 predictors; the current selected model retains the
+35-input base configuration (Section~\ref{sec:finalmodel}). Joins check key uniqueness,
 row counts, and matching IDs/dates so that adding features cannot silently
 change the evaluation population.
 
 \section{Data Mining Methods and Model Development}
 \label{sec:methods}
-% Approximately 1.5 pages. Reserve substantial space for completed improvements.
 
 \subsection{Reference Predictor and Ridge Baseline}
-\guide{Describe the historical town--flat-type median reference and its
-fallback rules. Explain why Ridge was selected as a fast baseline for sparse,
-correlated predictors. State its feature set and target representation.
-Describe how it was applied rather than reproducing textbook derivations.}
+The initial reference in Notebook~05 predicted the historical median rent
+for each town/flat-type pair, falling back to the town median, flat-type
+median, and overall training median when necessary. This provides a simple
+location/size reference but does not explicitly represent market changes.
+Its original evaluation removed exact duplicate records, so its scores are
+not included in the common-population comparison below.
+
+Ridge regression served as the main reference for the improvement experiments.
+It minimises squared prediction error with an $L_2$ coefficient penalty,
+which helps control correlated inputs~\cite{ridge_reference}. Its sparse
+one-hot representation makes it inexpensive to fit and useful for checking
+preprocessing and feature choices. The baseline used 35 core/HDB/MRT
+predictors, standardised numeric inputs, and untransformed SGD rents. We
+selected $\alpha=10$ over 100 using the earlier validation windows. Fitting
+used the LSQR solver with tolerance $10^{-4}$ and at most 10,000 iterations.
 
 \subsection{Candidate Models}
-\guide{Describe the alternative models actually evaluated after the progress
-report. Possible candidates include boosting models, but do not list a method
-as an experiment unless it was run. For each model, explain its suitability,
-categorical handling, target representation and principal configuration.
-Add verified references for advanced methods. Remove unused candidates.}
+\subsubsection{CatBoost}
+We evaluated gradient-boosted trees to represent nonlinear relationships
+and interactions among time, location and property descriptors. CatBoost
+accepts categorical fields directly, avoiding the external one-hot pipeline
+used by Ridge~\cite{final_model_reference}. We fitted raw SGD targets with
+RMSE loss, seed 42, and four CPU threads. Input rows were chronological and
+\field{has_time=True} preserved their order during categorical processing
+and tree construction~\cite{catboost_parameters}. Numeric missing values
+were handled natively. Tree count was chosen using a chronological block
+inside the training data, with a 500-tree budget and 40-round early stopping.
+
+\subsubsection{Multilayer perceptron}
+The MLP used two hidden layers with 64 and 32 ReLU units, Adam optimisation,
+$L_2$ regularisation 0.01, initial learning rate 0.001, and batch size 1,024.
+Numeric inputs were standardised and categorical inputs were sparse one-hot
+vectors. Training rents were standardised and predictions converted back
+to SGD. We used \field{MLPRegressor} with incremental epoch-wise training
+and disabled its random validation split~\cite{mlp_reference}. Internal
+chronological RMSE selected the epoch count, with a maximum of 40 epochs;
+training stopped after six epochs without an improvement exceeding 0.1 SGD.
+The chosen duration was then used to refit on the complete outer training
+portion. Seeds 42, 123 and 2026 assessed stability; seed 42 was fixed for
+model selection. Architecture, learning rate and regularisation were not
+grid-searched. The MLP used the 35 base predictors without feature-group tests.
 
 \subsection{Completed Model Improvements}
 \label{sec:improvements}
-\guide{Use this subsection for the improvements completed before submission.
-For each change, connect an observed weakness to a specific modification and
-its controlled evaluation. Report unsuccessful changes when they explain
-why a component was excluded. Do not write this subsection as a plan.}
+The preprocessing audit retained original transactions and masked invalid
+source attributes as described in Section~\ref{sec:preprocessing_audit}.
+Subsequent experiments held this treatment fixed to isolate model and
+feature changes. Replacing Ridge with CatBoost allowed nonlinear combinations
+of the existing inputs. No capped trend, recency weighting, rolling training
+window, post-hoc calibration or ensemble was evaluated; temporal differences
+below describe the fitted models rather than a separate calibration method.
 
-\subsubsection{Temporal Representation and Calibration}
-\guide{Describe any completed changes to linear time trends, piecewise or
-capped trends, training windows, recency weights or calibration. Explain how
-cutoffs and other choices were selected using historical validation. State
-which approach the final model retained. Delete this heading if no such
-experiment was completed.}
+\subsubsection{Auxiliary and historical information}
+Ridge and CatBoost each tested six school features, three mall features,
+their nine-feature combination, and four historical-rent summaries. Each
+group was added separately to the 35 base predictors. Historical inputs
+were past mean rent and count by town/flat type and by property address.
+Training histories excluded the current month; evaluation histories were
+frozen at the training cutoff. Unseen groups received count zero and a
+missing mean, handled by the model's usual missing-value treatment.
+This allowed target-derived information without using evaluation rents.
 
-\subsubsection{Feature Interactions and Auxiliary Information}
-\guide{Describe completed tests of time--location or property interactions,
-alternative categorical representations, and additional auxiliary feature
-groups. Identify retained and rejected features. Distinguish a plausible
-explanation from an effect demonstrated by ablation.}
-
-\subsubsection{Tuning and Model Combination}
-\guide{Describe completed tuning, early stopping or ensemble experiments.
-If an ensemble was used, specify its component models, training protocol and
-how its weights were selected without using evaluation labels. Remove this
-heading when the final method is a single model with no relevant experiment.}
+\subsubsection{Tuning and selection}
+We first selected model parameters on base features, then evaluated the
+additional groups with those parameters fixed. The expanded CatBoost grid
+contained 20 configurations: depths $\{6,8\}$, learning rates
+$\{0.001,0.005,0.01,0.05,0.08\}$, and leaf regularisation $\{3,5\}$.
+An added group was retained only if the best group reduced mean validation
+RMSE by at least 1 SGD relative to base features. With the selected tree
+parameters, history reduced RMSE by 0.889 SGD, so the simpler base feature
+set was retained. This tolerance expresses a practical preference for
+simplicity, not a statistical significance test.
 
 \subsection{Final Model Specification}
 \label{sec:finalmodel}
-\guide{Give the selected final model or ensemble, exact feature groups,
-target transformation, hyperparameters and training procedure. Explain the
-selection criterion. This subsection must describe the implemented final
-system, not merely the highest-scoring intermediate run. State the final
-refitting procedure and any post-processing used for test predictions.}
+The earlier-fold selection chose a single CatBoost model with
+35 core/HDB/MRT predictors, depth 8, learning rate 0.05, and leaf
+regularisation 3. It retained all training records and used invalid-source
+masking/address recovery. School, mall and rental-history additions were
+excluded. Targets remained in SGD, and no prediction clipping or other
+post-processing was applied in the evaluation pipeline. Internal validation
+selected 271 and 350 trees in the two selection folds, and 468 trees for
+the later diagnostic block. For the final submission, the internal split
+used January--March 2025 to select 499 trees from a model trained on earlier
+months. We then fitted a fresh 499-tree model on all 150,000 labelled
+records through March 2025 and predicted the 50,000 test records. The final
+feature contract contains 35 predictors, including eleven categorical
+fields; row IDs and parsed dates serve only alignment and validation.
 
 \section{Experimental Setup}
 \label{sec:experiments}
-% Approximately 1.0 pages.
 
 \subsection{Chronological Validation}
-\guide{Explain why evaluation must train on earlier rentals and predict later
-rentals. Table~\ref{tab:folds} shows the existing expanding windows. Replace
-or supplement them if the final protocol changes. State the prediction
-horizon and any gap. Explain how final performance was evaluated separately
-from tuning, or explicitly disclose reuse of the tuning folds.}
+Random splitting could mix later market conditions into training. Instead,
+we used expanding training windows and evaluated complete later months
+(Table~\ref{tab:folds}). There was no gap between training and evaluation.
+Preprocessing, parameter, feature and model selection used only the two
+six-month windows. The selected configurations were frozen before evaluating
+the nine-month diagnostic block. That block was already examined during
+the original baseline work and is therefore not a completely untouched
+holdout, although its new scores did not trigger model switching.
 
 \begin{table}[t]
-  \caption{Existing chronological validation windows. Update to match the
-  final evaluation protocol.}
+  \caption{Chronological evaluation. Counts refer to original labelled records.}
   \label{tab:folds}
-  \centering
-  \small
-  \begin{tabularx}{\columnwidth}{lXX}
+  \centering\small
+  \begin{tabularx}{\columnwidth}{lXrr}
     \toprule
-    Fold & Training through & Validation period \\
+    Use & Evaluation months & Train & Evaluate \\
     \midrule
-    1 & Jun. 2023 & Jul.--Dec. 2023 \\
-    2 & Dec. 2023 & Jan.--Jun. 2024 \\
-    3 & Jun. 2024 & Jul. 2024--Mar. 2025 \\
+    Selection 1 & Jul.--Dec. 2023 & 87,937 & 17,900 \\
+    Selection 2 & Jan.--Jun. 2024 & 105,837 & 18,179 \\
+    Diagnostic & Jul. 2024--Mar. 2025 & 124,016 & 25,984 \\
+    Long horizon & Jul. 2023--Oct. 2024 & 87,937 & 47,528 \\
     \bottomrule
   \end{tabularx}
 \end{table}
-\guide{The current validation blocks span 6, 6 and 9 months, while the
-maximum test prediction distance is 16 months after the last training month.
-Describe any completed longer-horizon evaluation, or acknowledge the horizon
-limitation. A fold already used to choose models is not an untouched holdout.}
+
+The separate long-horizon diagnostic trained through June 2023 and predicted
+16 months without updating from evaluation rents. This matches the maximum
+future test horizon in duration, but covers different market conditions.
+It overlaps the selection and later diagnostic windows and is neither
+independent evidence nor an additional tuning window.
 
 \subsection{Training-Fold Preprocessing and Leakage Controls}
-\guide{Describe how numerical imputation, scaling, categorical vocabularies
-and infrequent-category grouping were fitted inside each historical training
-fold. Explain any model-specific exceptions. Exclude target-derived inputs.
-State how unknown categories and auxiliary missingness were handled.}
+All data-dependent transformations were fitted within the relevant training
+portion. Ridge and MLP used numeric median imputation and standardisation,
+categorical mode imputation, and one-hot encoding with minimum frequency 10.
+Unknown categories mapped to an existing infrequent category, or to an
+all-zero encoding when that bucket was absent. CatBoost received normalised
+categorical strings directly and retained numeric gaps for native handling.
+Address-recovery maps and rental summaries were rebuilt for each fold.
+The last three training months formed the internal block for tree-count
+and MLP-epoch selection; its preprocessing was fitted on the preceding
+months. Models were then refitted on the complete outer training portion.
+Evaluation labels never entered these transformations or iteration selection.
 
 \subsection{Hyperparameter Selection and Reproducibility}
-\guide{Report the actual search strategy, search space, validation criterion,
-random seeds, software versions and relevant resource constraints. The
-existing Ridge search uses alpha in \{0.1, 1, 10, 100\}; update this if expanded.
-Summarise decisive settings in the main text and put the full grid in the
-appendix. Every result must be traceable to a saved experiment configuration.}
+Selection minimised the unweighted mean RMSE of the two earlier windows.
+Ridge evaluated $\alpha\in\{10,100\}$; CatBoost evaluated the 20-setting grid
+before four feature additions. Each configuration was scored on both
+selection windows, giving 40 base-feature CatBoost fits and eight
+feature-addition fits, each with its own internal tree-count selection.
+Ridge used four base-feature fits and eight feature-addition fits. The MLP
+evaluated one configuration at three seeds on both windows, giving six
+fits, with the predeclared seed 42 used for comparison. These unequal tuning
+budgets limit conclusions about model families, particularly neural networks.
+The recorded seed-42 MLP selected one and two epochs in the earlier folds
+and five epochs in the later diagnostic.
+
+Notebooks~06--10 call the shared implementation in
+\field{experiments/rental_experiments.py}. CSV scores and JSON selections
+record fold sizes, parameters, selected iterations and runtime. The saved
+refit environment records Python 3.11.5, NumPy 1.26.4, pandas 2.1.4,
+scikit-learn 1.2.2 and CatBoost 1.2.10, together with SHA-256 hashes of the
+raw training data, test data and shared implementation. The current refit
+metadata and processed-data contract agree with the selected model;
+the recorded hashes match the repository inputs and implementation.
+The final full-data fit and test prediction took approximately 81.4 seconds.
+Earlier-fold base
+fits took approximately 1.2--1.5 seconds for selected Ridge, 25.9--38.6
+seconds for selected CatBoost, and 5.2--8.5 seconds for seed-42 MLP;
+these are observed pipeline runtimes rather than hardware-normalised benchmarks.
 
 \subsection{Metrics and Controlled Comparisons}
-\guide{Use RMSE as the primary metric and MAE and R-squared as supporting
-diagnostics. Define whether results are unweighted means of fold metrics or
-pooled validation metrics. Use identical record IDs and original labels for
-feature comparisons. State the tuning protocol for model comparisons.
-If uncertainty is reported, specify how temporal dependence was handled.}
+For original rents $y_i$ and predictions $\hat y_i$, we report
+\begin{equation}
+ \mathrm{RMSE}=\sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i-\hat y_i)^2},
+ \quad \mathrm{MAE}=\frac{1}{n}\sum_{i=1}^{n}|y_i-\hat y_i|.
+\end{equation}
+RMSE is the selection metric; MAE, $R^2$ and signed bias support interpretation.
+Residuals are actual minus predicted, so positive mean bias indicates
+underprediction. Selection scores are unweighted averages of fold RMSEs,
+whereas later and long-horizon scores are pooled within their respective
+blocks. We calculated later-block $R^2$ from the saved predictions.
+Every new comparison used identical original validation IDs and individual
+rents. Notebook~05's deduplicated population is reported separately rather
+than mixed into these tables. We did not estimate confidence intervals or
+claim statistical significance from small score differences.
 
 \section{Final Results and Discussion}
 \label{sec:results}
-% Approximately 2.0 pages. Keep decisive evidence in the main text.
 
 \subsection{Overall Model Comparison}
-\guide{Fill Table~\ref{tab:mainresults} with the final verified results from
-one consistent evaluation protocol. Compare the reference, baseline,
-improved model and selected final configuration. Explain why the final model
-was selected, including performance consistency and relevant trade-offs.
-All values below remain TBD until the final runs are frozen.}
+Table~\ref{tab:mainresults} compares the frozen configurations on 25,984
+later observations. CatBoost achieved RMSE 458.740 SGD versus 582.264 SGD
+for Ridge, a 21.21\% reduction, and reduced MAE from 432.274 to 334.412 SGD.
+Its earlier-fold mean RMSE was also lowest: 547.372 SGD, compared with
+600.808 for Ridge and 609.986 for seed-42 MLP. These earlier scores determined
+the winner. The MLP's later RMSE of 469.729 SGD was close to CatBoost despite
+its weaker earlier result; this change in ranking cautions against judging
+models from one period alone.
 
 \begin{table*}[t]
-  \caption{Final comparison under the common evaluation protocol. Replace
-  generic model names and remove rows for experiments not completed.}
+  \caption{Common-population comparison, July 2024--March 2025 (25,984 rows).
+  All models use the 35 base features. Reduction is relative to Ridge.}
   \label{tab:mainresults}
-  \centering
-  \small
-  \begin{tabularx}{\textwidth}{lXrrrr}
+  \centering\small
+  \begin{tabular}{lrrrrr}
     \toprule
-    Method & Feature set & RMSE (SGD) & MAE (SGD) & $R^2$ & RMSE reduction (\%) \\
+    Method & RMSE (SGD) & MAE (SGD) & $R^2$ & Bias (SGD) & RMSE reduction (\%) \\
     \midrule
-    Historical median & Town and flat type & \pending & \pending & \pending & --- \\
-    Ridge baseline & Core & \pending & \pending & \pending & \pending \\
-    Ridge baseline & Core + HDB/MRT & \pending & \pending & \pending & \pending \\
-    Improved model & Specify evaluated inputs & \pending & \pending & \pending & \pending \\
-    Final selected model & Specify final inputs & \pending & \pending & \pending & \pending \\
+    Ridge, $\alpha=10$ & 582.264 & 432.274 & 0.201 & $-337.793$ & 0.00 \\
+    MLP, seed 42 & 469.729 & 347.440 & 0.480 & 34.853 & 19.33 \\
+    CatBoost, selected & 458.740 & 334.412 & 0.504 & 13.551 & 21.21 \\
     \bottomrule
-  \end{tabularx}
-  \par\smallskip
-  \parbox{0.95\textwidth}{\footnotesize Specify the score aggregation and
-  evaluation population. Define percentage reduction relative to the Core
-  Ridge baseline. If the improved and final models are identical, combine
-  those rows. Use a clearly separate column for any external competition score.}
+  \end{tabular}
 \end{table*}
 
 \subsection{Performance across Time Periods}
-\guide{Report per-fold results and explain differences between market
-periods. A lower average alone is insufficient to establish temporal
-robustness. Figure~\ref{fig:modelcomparison} should compare the principal
-methods across the same validation windows.}
-\begin{figure}[t]
-  \centering
-  \figureplaceholder{23mm}{Per-fold RMSE for the baseline and final model.}
-  \caption{Performance across chronological validation periods. Replace the
-  placeholder with results from the final experiment runs.}
-  \label{fig:modelcomparison}
-\end{figure}
+Table~\ref{tab:periodresults} shows that CatBoost improved on Ridge in both
+selection periods and the later diagnostic. Ridge's RMSE was similar across
+these periods, but its earlier-fold bias changed from $-72.7$ to $-300.3$
+SGD, consistent with excessive extrapolation as rent growth flattened.
+CatBoost's later-period improvement coincided with much smaller aggregate
+bias. This is observed calibration behaviour, not evidence that a particular
+input or mechanism caused the difference.
 
-\subsection{Ablation Studies}
-\label{sec:ablation}
-\guide{Quantify the contribution of completed improvements by adding or
-removing one component while keeping the evaluation population fixed. Select
-the most informative feature, temporal and modelling ablations. Table~
-\ref{tab:ablation} is a template, not a required list of experiments.}
 \begin{table}[t]
-  \caption{Controlled ablation of the final model.}
-  \label{tab:ablation}
-  \centering
-  \small
-  \begin{tabularx}{\columnwidth}{Xrr}
+  \caption{RMSE (SGD) by evaluation period. The final row overlaps the others.}
+  \label{tab:periodresults}
+  \centering\small
+  \begin{tabularx}{\columnwidth}{Xrrr}
     \toprule
-    Configuration & RMSE (SGD) & $\Delta$RMSE \\
+    Period & Ridge & MLP & CatBoost \\
     \midrule
-    Full final configuration & \pending & 0.00 \\
-    Without auxiliary spatial features & \pending & \pending \\
-    Without the selected temporal change & \pending & \pending \\
-    Without a tested interaction/component & \pending & \pending \\
+    Jul.--Dec. 2023 & 597.807 & 618.967 & 578.121 \\
+    Jan.--Jun. 2024 & 603.809 & 601.005 & 516.622 \\
+    Jul. 2024--Mar. 2025 & 582.264 & 469.729 & 458.740 \\
+    16-month diagnostic & 624.419 & --- & 534.106 \\
     \bottomrule
   \end{tabularx}
-  \par\smallskip
-  \parbox{0.95\columnwidth}{\footnotesize Define $\Delta$RMSE as the
-  ablated configuration's score minus the full configuration's score.
-  Remove rows for components not tested.}
 \end{table}
-\guide{The progress report's approximately 0.1\% HDB/MRT gain is an
-intermediate Ridge finding. Re-evaluate its contribution under the final
-model and describe tiny differences proportionately. Do not call a difference
-statistically significant without an appropriate uncertainty analysis.}
+
+At the earlier forecast origin, CatBoost's 16-month RMSE was 534.106 SGD
+versus 624.419 SGD for Ridge, a 14.46\% reduction. Its MAE was 410.923 SGD
+and bias 30.371 SGD, compared with Ridge's MAE 473.995 SGD and bias
+$-263.517$ SGD. The gain persists in this longer diagnostic, but a different
+origin and overlapping observations prevent treating it as an independent
+estimate of future competition accuracy.
+
+\subsection{Controlled Feature Comparisons}
+\label{sec:ablation}
+Table~\ref{tab:ablation} reports completed feature additions with selected
+parameters held fixed. Ridge gained no useful improvement from any group.
+For CatBoost, schools and malls separately increased mean RMSE, their
+combination reduced it by 0.387 SGD, and history reduced it by 0.889 SGD.
+Neither reduction met the 1 SGD retention rule. Consequently, the final
+selection uses the existing HDB/MRT inputs without these additions. The
+comparison demonstrates that additional predictors do not automatically
+improve forecasting. It does not isolate HDB/MRT's contribution to CatBoost:
+no core-only CatBoost removal experiment was completed.
+
+\begin{table}[t]
+  \caption{Earlier-fold mean RMSE (SGD) at fixed selected parameters.
+  CatBoost uses depth 8, learning rate 0.05, regularisation 3; Ridge uses
+  $\alpha=10$. Each addition is separate.}
+  \label{tab:ablation}
+  \centering\small
+  \begin{tabularx}{\columnwidth}{Xrr}
+    \toprule
+    Feature configuration & Ridge & CatBoost \\
+    \midrule
+    Base (35 inputs) & 600.808 & 547.372 \\
+    Base + schools & 600.887 & 548.135 \\
+    Base + malls & 600.853 & 547.653 \\
+    Base + schools and malls & 600.885 & 546.985 \\
+    Base + history & 603.998 & 546.482 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
 
 \subsection{Error Analysis and Model Interpretation}
-\guide{Analyse the final model's errors by month, flat type, town and rent
-range. Report subgroup sample sizes, RMSE or MAE, and signed bias. Define
-residual as actual minus predicted. Show whether the final model still
-overpredicts the late-period plateau and compare with the Ridge baseline.
-Explain poor cases with observed evidence, while distinguishing unobserved
-causes and hypotheses. Treat correlated coefficients or feature attributions
-as predictive descriptions, not causal effects.}
-\begin{figure}[t]
-  \centering
-  \figureplaceholder{25mm}{Monthly actual and predicted mean rent for the
-  baseline and final model on the same latest evaluation period.}
-  \caption{Temporal calibration of the baseline and final model. Report
-  mean bias and the validation period in the completed caption.}
-  \label{fig:calibration}
-\end{figure}
+Ridge overpredicted later-block rent by 337.8 SGD on average, with monthly
+bias between $-422.4$ and $-183.8$ SGD. CatBoost's overall underprediction
+was 13.6 SGD, with monthly bias between $-12.2$ and 39.3 SGD. Thus, its
+aggregate RMSE gain accompanied substantially better temporal calibration.
 
-\subsection{Final Test Predictions and Submission}
-\guide{Identify the final refit, submission configuration and 50,000
-predictions aligned to the sample-submission IDs. Report an actual competition
-score only if available, specifying public/private split and the selected
-submission. Do not infer test accuracy from prediction ranges or compare a
-competition score directly with a different internal validation population.}
+Errors still varied across subgroups. CatBoost RMSE was 432.5 SGD for
+three-room flats (8,562 rows), 462.6 for four-room flats (9,468), 469.4 for
+five-room flats (5,927), and 551.0 for executive flats (1,309). Executive
+flats were underpredicted by 40.7 SGD on average. Only ten one-room rentals
+were available, so their subgroup score is too sparse for a broad conclusion.
+Among towns with at least 200 observations, Jurong West had the largest
+RMSE, 561.0 SGD (1,802 rows), and bias 83.1 SGD. Properties with fewer than
+ten training rentals had RMSE 477.9 SGD (5,447 evaluation rows), compared
+with 453.5 SGD for more frequently observed properties (20,537 rows).
+These comparisons describe observed groups without controlling their other
+characteristics.
 
-\subsection{Limitations of the Final Findings}
-\guide{Discuss limitations supported by the completed analysis: missing
-unit-level attributes, small subgroups, duplicate-record uncertainty,
-historical snapshot accuracy, correlated features and evaluation-horizon
-coverage. Explain how these constrain the claims about the selected model.
-Keep this as an assessment of the final evidence, without a future-outlook
-or planned-experiments section.}
+The largest saved CatBoost error concerned a five-room Bukit Merah rental
+in March 2025: actual rent was 650 SGD and prediction approximately 3,858
+SGD, an overprediction of 3,208 SGD. The supplied fields cannot establish
+whether such an unusually low rent reflects contract terms, flat condition
+or recording error. It remains in evaluation. No feature-attribution
+analysis was completed, so model improvements cannot be assigned to causal
+location or amenity effects.
+
+\subsection{Test Predictions and Submission Status}
+\label{sec:submission}
+The final \field{submissions/catboost_improved.csv} contains 50,000 finite
+predictions in exactly the sample-submission ID order. It was produced by
+the selected 35-input CatBoost configuration refitted with 499 trees on
+all 150,000 labelled records. The saved \field{final_refit.json} and
+\field{data/processed/improved/preprocessing_metadata.json} document the
+refit and feature contract. Processed training and test files preserve
+all records; these full-data artifacts are for final prediction, while
+validation rebuilds data-dependent transformations inside each fold.
+No verified competition score is available in the experiment artifacts,
+so the reported accuracy remains internal chronological performance.
+
+\subsection{Limitations of the Findings}
+Unit-level attributes and contract details are unavailable, leaving
+substantial unexplained variation and uncertainty about repeated records.
+Amenity snapshots lack complete opening histories, while the MRT proxy does
+not reconstruct station availability month by month. Historical summaries
+are frozen during forecasting and can become stale. CatBoost's long-horizon
+gain does not guarantee extrapolation under future market changes.
+
+Model and feature selection reused two windows for multiple comparisons,
+and the later block had already been inspected in the baseline work.
+The overlapping long-horizon diagnostic adds a different forecasting origin,
+not independent replication. The 500-tree cap also constrains the CatBoost
+comparison: all configurations with learning rates 0.001, 0.005 and 0.01
+used the full budget in both selection windows. Their higher errors may
+partly reflect insufficient iterations rather than intrinsically unsuitable
+learning rates. Parameters were selected on base features before feature
+additions, so the experiment does not exhaustively search parameter/feature
+combinations.
+
+MLP results reflect a fixed architecture and
+limited optimisation checks; mean RMSE varied from 609.986 to 639.407 SGD
+across seeds. They do not establish a general disadvantage of neural
+networks. The final submission matches the selected configuration, but
+future test labels remain unavailable; its realised accuracy cannot be
+inferred from file integrity or the internal diagnostic scores.
 
 \section{Conclusion}
 \label{sec:conclusion}
@@ -637,10 +767,22 @@ of the findings. Do not end with a list of work the team intends to do.}
   \url{https://companiesmarketcap.com/sgd/singapore/largest-companies-in-singapore-by-market-cap/}.
   Accessed: Oct. 10, 2026.
   \bibitem{ridge_reference}
-  \textit{Placeholder: verified reference for Ridge regression, if cited.}
+  scikit-learn developers, ``Ridge.'' [Online]. Available:
+  \url{https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html}.
+  Accessed: Oct. 10, 2026.
   \bibitem{final_model_reference}
-  \textit{Placeholder: original paper or authoritative reference for the
-  advanced method actually used in the final model.}
+  L. Prokhorenkova, G. Gusev, A. Vorobev, A. V. Dorogush, and A. Gulin,
+  ``CatBoost: unbiased boosting with categorical features,''
+  in \textit{Advances in Neural Information Processing Systems}, 2018.
+  [Online]. Available: \url{https://arxiv.org/abs/1706.09516}.
+  \bibitem{catboost_parameters}
+  CatBoost developers, ``Common parameters.'' [Online]. Available:
+  \url{https://catboost.ai/docs/en/references/training-parameters/common}.
+  Accessed: Oct. 10, 2026.
+  \bibitem{mlp_reference}
+  scikit-learn developers, ``MLPRegressor.'' [Online]. Available:
+  \url{https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html}.
+  Accessed: Oct. 10, 2026.
 \end{thebibliography}
 
 \clearpage

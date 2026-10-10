@@ -34,11 +34,7 @@
     "PRE2021_MRT_COUNT_WITHIN_1KM",
     "HDB_MATCHED",
     "HDB_BUILDING_AGE_INVALID",
-    "HDB_BUILDING_AGE_AT_RENT",
-    "HIST_TOWN_TYPE_MEAN",
-    "HIST_TOWN_TYPE_COUNT",
-    "HIST_PROPERTY_MEAN",
-    "HIST_PROPERTY_COUNT"
+    "HDB_BUILDING_AGE_AT_RENT"
   ],
   "target": "MONTHLY_RENT",
   "categorical_features": [
@@ -64,13 +60,13 @@
     "model": "catboost",
     "params": {
       "depth": 8,
-      "l2_leaf_reg": 5,
+      "l2_leaf_reg": 3,
       "learning_rate": 0.05
     },
-    "group": "history",
+    "group": "base",
     "policy": "keep_all",
     "imputation": "block_recovery",
-    "mean_RMSE": 546.2407837120243,
+    "mean_RMSE": 547.3718358942915,
     "feature_selection_rule": "Minimum earlier-fold mean RMSE; retain base if improvement <1 SGD.",
     "seed_policy": "MLP uses predeclared seed 42; other seeds are stability diagnostics."
   },
