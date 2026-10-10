@@ -1,0 +1,472 @@
+% CS5228 Group 6: English final-report structure.
+% Based on the supplied IEEE conference template.
+% This is a writing skeleton, not a report of completed final experiments.
+% Replace every prompt and TBD before submission. Keep the course layout.
+% Main-text budget (including title, abstract, tables and figures):
+% Title/abstract 0.4; Introduction 0.6; Data 0.4; EDA/preprocessing 1.4;
+% Methods 1.5; Experimental setup 1.0; Results/discussion 2.0;
+% Conclusion 0.3 = 7.6 pages, leaving 0.4 pages of buffer.
+% References and the appendix are outside the eight-page main-text limit.
+% The outline's rendered length does not predict the completed paper's length.
+
+\documentclass[conference]{IEEEtran}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{url}
+
+% Writing prompts are visible during drafting. Replace them with report prose.
+% Set \outlinefalse only after adding complete prose, figures and results.
+\newif\ifoutline
+\outlinetrue
+\newcommand{\guide}[1]{%
+  \ifoutline\par\noindent{\small\color{blue!65!black}%
+  \textit{Writing prompt: #1}}\par\fi}
+\newcommand{\pending}{\textit{TBD}}
+\newcommand{\figureplaceholder}[2]{%
+  \fbox{\parbox[c][#1][c]{0.91\linewidth}{%
+  \centering\small\textit{Figure placeholder}\\[4pt]#2}}}
+\newcommand{\field}[1]{\texttt{\detokenize{#1}}}
+
+\title{Predicting Singapore HDB Rental Prices under Temporal Distribution Shift}
+% Revise the title if the completed experiments support a different emphasis.
+\author{%
+  \IEEEauthorblockN{Ox Alpha (Group 6)}
+  \IEEEauthorblockA{%
+    Li Chengxuan (A0352428A), Mao Huanqing (A0257997Y)\\
+    Sun Zekun (A0351314R), Zhang Ziqing (A0223145R)\\
+    National University of Singapore}
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\guide{Write approximately 150--180 words after the final experiments are
+complete. State the practical rental-prediction problem, the dataset and
+temporal challenge, the analysis and preprocessing approach, the evaluated
+methods, and the selected final model. Give its verified evaluation results
+and the most important interpretation. Describe completed work in the past
+tense. Do not present progress-report scores as final results.}
+\end{abstract}
+
+\begin{IEEEkeywords}
+HDB rental prediction, temporal validation, feature engineering, regression,
+spatial auxiliary data
+\end{IEEEkeywords}
+
+\section{Introduction}
+\label{sec:introduction}
+% Approximately 0.6 pages.
+
+\subsection{Motivation and Problem Context}
+\guide{Explain how estimating HDB rents supports rental-budget planning and
+pricing decisions. Identify the intended users and why prediction is
+challenging when market conditions change. Use verified sources for external
+market or policy claims. Kaggle ranking should not be the primary motivation.}
+
+\subsection{Research Questions and Contributions}
+\guide{Organise the paper around the following questions. State contributions
+that the completed experiments actually support, rather than claiming that a
+new algorithm was invented.}
+\begin{enumerate}
+  \item How do temporal, spatial and property patterns inform preprocessing
+  and prediction of rental prices?
+  \item What predictive value do auxiliary features add beyond the core
+  rental attributes under a controlled comparison?
+  \item Which completed model improvements produce the most reliable
+  performance across later time periods, and where does the final model fail?
+\end{enumerate}
+
+\section{Data and Problem Formulation}
+\label{sec:data}
+% Approximately 0.4 pages.
+
+\subsection{Prediction Task and Core Data}
+\guide{Define supervised regression from rental attributes to
+\field{MONTHLY_RENT} in SGD. Summarise the supplied inputs, labelled data and
+test data. Distinguish raw sample counts from the counts used by the final
+training pipeline. The goal is prediction, not estimation of causal effects.}
+
+\begin{table}[t]
+  \caption{Overview of the supplied rental data.}
+  \label{tab:data}
+  \centering
+  \small
+  \begin{tabularx}{\columnwidth}{lXX}
+    \toprule
+    Property & Training data & Test data \\
+    \midrule
+    Raw records & 150,000 & 50,000 \\
+    Rental months & Jan. 2021--Mar. 2025 & Mar. 2025--Jul. 2026 \\
+    Supplied predictors & 10 & 10 \\
+    Target labels & Available & Unavailable \\
+    Final modelling records & \pending & 50,000 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+\guide{Refer to Table~\ref{tab:data}. Explain that a small part of the test
+data overlaps the final training month, while most records are later. Do not
+describe every test record as strictly later than all training observations.}
+
+\subsection{Auxiliary Data Sources}
+\guide{Introduce HDB block metadata, MRT stations, schools, shopping malls,
+COE prices and stock prices. Identify which sources were evaluated and which
+were retained in the final model. Investigation or feature construction alone
+does not establish predictive value. Cite the actual dataset sources.}
+
+\section{Exploratory Data Analysis and Preprocessing}
+\label{sec:eda}
+% Approximately 1.4 pages. Connect each decision to evidence.
+
+\subsection{Target Distribution and Data Quality}
+\guide{Describe the target distribution and raw completeness. Explain why
+constant \field{FURNISHED} and \field{FEE} fields were removed. Discuss the
+IQR-flagged extremes and the final outlier policy. Do not equate an unusual
+rent with a proven recording error. State whether the final model used raw
+rent or a transformed target and support the decision with completed tests.}
+
+\subsection{Temporal Patterns and Distribution Shift}
+\guide{Explain the rapid rental growth during 2021--2023 followed by much
+smaller changes in 2024 and early 2025. Connect this change to the validation
+design and the final representation of time. Label early-2025 statistics as
+partial-year statistics. Figure~\ref{fig:time} should establish this finding.}
+\begin{figure}[t]
+  \centering
+  \figureplaceholder{25mm}{Monthly mean and median rent, with validation
+  boundaries and a clearly labelled late-period plateau.}
+  \caption{Rental-price patterns over the training period. Replace this
+  placeholder with a plot and specify the sample population in the caption.}
+  \label{fig:time}
+\end{figure}
+
+\subsection{Spatial and Property Patterns}
+\guide{Summarise rent differences by town, flat type and floor area. Explain
+the confounding between time, location and property size. Show only the EDA
+evidence that supports a modelling decision. Rent per square metre may be
+used descriptively but must not enter predictors because it contains the
+target. Put additional town and flat-model plots in the appendix.}
+
+\subsection{Core Cleaning and Feature Construction}
+\guide{Describe text and date normalisation, equivalent flat-type labels,
+location keys, lease-age handling and floor-area transformations. Explain the
+purpose of each retained feature group. The current core pipeline produces
+19 model inputs, but update this count and the feature descriptions if the
+final feature set changes. Keep \field{ROW_ID} and \field{RENT_DATE} for
+alignment and validation, and exclude them from the predictor matrix.}
+
+\begin{table}[t]
+  \caption{EDA findings and the corresponding preprocessing decisions.}
+  \label{tab:preprocessing}
+  \centering
+  \small
+  \begin{tabularx}{\columnwidth}{p{0.31\columnwidth}X}
+    \toprule
+    Finding & Decision and justification \\
+    \midrule
+    Constant fields & Remove fields without predictive variation. \\
+    Inconsistent category labels & Normalise case, whitespace and equivalent
+    room labels. \\
+    Temporal regime change & Describe the final trend and seasonal features,
+    supported by evaluation. \\
+    Invalid derived lease age & Flag and treat as missing, with fold-specific
+    imputation when required. \\
+    Repeated observations & State and justify the final duplicate policy. \\
+    Extreme targets & State the retained or filtered policy and supporting
+    evidence. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\subsection{Auxiliary Construction and Record Integrity}
+\guide{Describe address-key joins, HDB attributes and spatial distances or
+counts. Explain how historical availability was handled for MRT and other
+snapshot data. For economic variables, describe aggregation, calendar lags
+and information availability. Report verified coverage and missingness for
+sources actually used.}
+\guide{State the final exact-duplicate and repeated-feature policies. The
+current core removes 641 exact repeats and retains 149,359 rows. An earlier
+auxiliary file collapsed feature vectors and averaged rents. The corrected
+Ridge comparison uses the same individual core rows and original targets.
+Report the final policy, preserve comparable evaluation populations, and
+explain any weighting if records were aggregated. Do not compare scores
+computed against original targets with scores computed against group means.}
+
+\section{Data Mining Methods and Model Development}
+\label{sec:methods}
+% Approximately 1.5 pages. Reserve substantial space for completed improvements.
+
+\subsection{Reference Predictor and Ridge Baseline}
+\guide{Describe the historical town--flat-type median reference and its
+fallback rules. Explain why Ridge was selected as a fast baseline for sparse,
+correlated predictors. State its feature set and target representation.
+Describe how it was applied rather than reproducing textbook derivations.}
+
+\subsection{Candidate Models}
+\guide{Describe the alternative models actually evaluated after the progress
+report. Possible candidates include boosting models, but do not list a method
+as an experiment unless it was run. For each model, explain its suitability,
+categorical handling, target representation and principal configuration.
+Add verified references for advanced methods. Remove unused candidates.}
+
+\subsection{Completed Model Improvements}
+\label{sec:improvements}
+\guide{Use this subsection for the improvements completed before submission.
+For each change, connect an observed weakness to a specific modification and
+its controlled evaluation. Report unsuccessful changes when they explain
+why a component was excluded. Do not write this subsection as a plan.}
+
+\subsubsection{Temporal Representation and Calibration}
+\guide{Describe any completed changes to linear time trends, piecewise or
+capped trends, training windows, recency weights or calibration. Explain how
+cutoffs and other choices were selected using historical validation. State
+which approach the final model retained. Delete this heading if no such
+experiment was completed.}
+
+\subsubsection{Feature Interactions and Auxiliary Information}
+\guide{Describe completed tests of time--location or property interactions,
+alternative categorical representations, and additional auxiliary feature
+groups. Identify retained and rejected features. Distinguish a plausible
+explanation from an effect demonstrated by ablation.}
+
+\subsubsection{Tuning and Model Combination}
+\guide{Describe completed tuning, early stopping or ensemble experiments.
+If an ensemble was used, specify its component models, training protocol and
+how its weights were selected without using evaluation labels. Remove this
+heading when the final method is a single model with no relevant experiment.}
+
+\subsection{Final Model Specification}
+\label{sec:finalmodel}
+\guide{Give the selected final model or ensemble, exact feature groups,
+target transformation, hyperparameters and training procedure. Explain the
+selection criterion. This subsection must describe the implemented final
+system, not merely the highest-scoring intermediate run. State the final
+refitting procedure and any post-processing used for test predictions.}
+
+\section{Experimental Setup}
+\label{sec:experiments}
+% Approximately 1.0 pages.
+
+\subsection{Chronological Validation}
+\guide{Explain why evaluation must train on earlier rentals and predict later
+rentals. Table~\ref{tab:folds} shows the existing expanding windows. Replace
+or supplement them if the final protocol changes. State the prediction
+horizon and any gap. Explain how final performance was evaluated separately
+from tuning, or explicitly disclose reuse of the tuning folds.}
+
+\begin{table}[t]
+  \caption{Existing chronological validation windows. Update to match the
+  final evaluation protocol.}
+  \label{tab:folds}
+  \centering
+  \small
+  \begin{tabularx}{\columnwidth}{lXX}
+    \toprule
+    Fold & Training through & Validation period \\
+    \midrule
+    1 & Jun. 2023 & Jul.--Dec. 2023 \\
+    2 & Dec. 2023 & Jan.--Jun. 2024 \\
+    3 & Jun. 2024 & Jul. 2024--Mar. 2025 \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+\guide{The current validation blocks span 6, 6 and 9 months, while the
+maximum test prediction distance is 16 months after the last training month.
+Describe any completed longer-horizon evaluation, or acknowledge the horizon
+limitation. A fold already used to choose models is not an untouched holdout.}
+
+\subsection{Training-Fold Preprocessing and Leakage Controls}
+\guide{Describe how numerical imputation, scaling, categorical vocabularies
+and infrequent-category grouping were fitted inside each historical training
+fold. Explain any model-specific exceptions. Exclude target-derived inputs.
+State how unknown categories and auxiliary missingness were handled.}
+
+\subsection{Hyperparameter Selection and Reproducibility}
+\guide{Report the actual search strategy, search space, validation criterion,
+random seeds, software versions and relevant resource constraints. The
+existing Ridge search uses alpha in \{0.1, 1, 10, 100\}; update this if expanded.
+Summarise decisive settings in the main text and put the full grid in the
+appendix. Every result must be traceable to a saved experiment configuration.}
+
+\subsection{Metrics and Controlled Comparisons}
+\guide{Use RMSE as the primary metric and MAE and R-squared as supporting
+diagnostics. Define whether results are unweighted means of fold metrics or
+pooled validation metrics. Use identical record IDs and original labels for
+feature comparisons. State the tuning protocol for model comparisons.
+If uncertainty is reported, specify how temporal dependence was handled.}
+
+\section{Final Results and Discussion}
+\label{sec:results}
+% Approximately 2.0 pages. Keep decisive evidence in the main text.
+
+\subsection{Overall Model Comparison}
+\guide{Fill Table~\ref{tab:mainresults} with the final verified results from
+one consistent evaluation protocol. Compare the reference, baseline,
+improved model and selected final configuration. Explain why the final model
+was selected, including performance consistency and relevant trade-offs.
+All values below remain TBD until the final runs are frozen.}
+
+\begin{table*}[t]
+  \caption{Final comparison under the common evaluation protocol. Replace
+  generic model names and remove rows for experiments not completed.}
+  \label{tab:mainresults}
+  \centering
+  \small
+  \begin{tabularx}{\textwidth}{lXrrrr}
+    \toprule
+    Method & Feature set & RMSE (SGD) & MAE (SGD) & $R^2$ & RMSE reduction (\%) \\
+    \midrule
+    Historical median & Town and flat type & \pending & \pending & \pending & --- \\
+    Ridge baseline & Core & \pending & \pending & \pending & \pending \\
+    Ridge baseline & Core + HDB/MRT & \pending & \pending & \pending & \pending \\
+    Improved model & Specify evaluated inputs & \pending & \pending & \pending & \pending \\
+    Final selected model & Specify final inputs & \pending & \pending & \pending & \pending \\
+    \bottomrule
+  \end{tabularx}
+  \par\smallskip
+  \parbox{0.95\textwidth}{\footnotesize Specify the score aggregation and
+  evaluation population. Define percentage reduction relative to the Core
+  Ridge baseline. If the improved and final models are identical, combine
+  those rows. Use a clearly separate column for any external competition score.}
+\end{table*}
+
+\subsection{Performance across Time Periods}
+\guide{Report per-fold results and explain differences between market
+periods. A lower average alone is insufficient to establish temporal
+robustness. Figure~\ref{fig:modelcomparison} should compare the principal
+methods across the same validation windows.}
+\begin{figure}[t]
+  \centering
+  \figureplaceholder{23mm}{Per-fold RMSE for the baseline and final model.}
+  \caption{Performance across chronological validation periods. Replace the
+  placeholder with results from the final experiment runs.}
+  \label{fig:modelcomparison}
+\end{figure}
+
+\subsection{Ablation Studies}
+\label{sec:ablation}
+\guide{Quantify the contribution of completed improvements by adding or
+removing one component while keeping the evaluation population fixed. Select
+the most informative feature, temporal and modelling ablations. Table~
+\ref{tab:ablation} is a template, not a required list of experiments.}
+\begin{table}[t]
+  \caption{Controlled ablation of the final model.}
+  \label{tab:ablation}
+  \centering
+  \small
+  \begin{tabularx}{\columnwidth}{Xrr}
+    \toprule
+    Configuration & RMSE (SGD) & $\Delta$RMSE \\
+    \midrule
+    Full final configuration & \pending & 0.00 \\
+    Without auxiliary spatial features & \pending & \pending \\
+    Without the selected temporal change & \pending & \pending \\
+    Without a tested interaction/component & \pending & \pending \\
+    \bottomrule
+  \end{tabularx}
+  \par\smallskip
+  \parbox{0.95\columnwidth}{\footnotesize Define $\Delta$RMSE as the
+  ablated configuration's score minus the full configuration's score.
+  Remove rows for components not tested.}
+\end{table}
+\guide{The progress report's approximately 0.1\% HDB/MRT gain is an
+intermediate Ridge finding. Re-evaluate its contribution under the final
+model and describe tiny differences proportionately. Do not call a difference
+statistically significant without an appropriate uncertainty analysis.}
+
+\subsection{Error Analysis and Model Interpretation}
+\guide{Analyse the final model's errors by month, flat type, town and rent
+range. Report subgroup sample sizes, RMSE or MAE, and signed bias. Define
+residual as actual minus predicted. Show whether the final model still
+overpredicts the late-period plateau and compare with the Ridge baseline.
+Explain poor cases with observed evidence, while distinguishing unobserved
+causes and hypotheses. Treat correlated coefficients or feature attributions
+as predictive descriptions, not causal effects.}
+\begin{figure}[t]
+  \centering
+  \figureplaceholder{25mm}{Monthly actual and predicted mean rent for the
+  baseline and final model on the same latest evaluation period.}
+  \caption{Temporal calibration of the baseline and final model. Report
+  mean bias and the validation period in the completed caption.}
+  \label{fig:calibration}
+\end{figure}
+
+\subsection{Final Test Predictions and Submission}
+\guide{Identify the final refit, submission configuration and 50,000
+predictions aligned to the sample-submission IDs. Report an actual competition
+score only if available, specifying public/private split and the selected
+submission. Do not infer test accuracy from prediction ranges or compare a
+competition score directly with a different internal validation population.}
+
+\subsection{Limitations of the Final Findings}
+\guide{Discuss limitations supported by the completed analysis: missing
+unit-level attributes, small subgroups, duplicate-record uncertainty,
+historical snapshot accuracy, correlated features and evaluation-horizon
+coverage. Explain how these constrain the claims about the selected model.
+Keep this as an assessment of the final evidence, without a future-outlook
+or planned-experiments section.}
+
+\section{Conclusion}
+\label{sec:conclusion}
+% Approximately 0.3 pages.
+\guide{Answer the research questions using the completed final results.
+Name the selected model, quantify its performance relative to the baseline,
+state which improvements and auxiliary features proved useful, and summarise
+the most important error or limitation. End with the practical interpretation
+of the findings. Do not end with a list of work the team intends to do.}
+
+% References begin on a separate page so that the main-text boundary is clear.
+% Check the compiled main text ends within eight pages after replacing prompts.
+\clearpage
+\begin{thebibliography}{00}
+  % Replace these drafting entries with verified citations and cite them in prose.
+  % Delete unused entries. Do not retain placeholders in the final submission.
+  \bibitem{data_source}
+  \textit{Placeholder: verified citation for the course rental dataset and
+  the auxiliary data sources actually used.}
+  \bibitem{ridge_reference}
+  \textit{Placeholder: verified reference for Ridge regression, if cited.}
+  \bibitem{final_model_reference}
+  \textit{Placeholder: original paper or authoritative reference for the
+  advanced method actually used in the final model.}
+\end{thebibliography}
+
+\clearpage
+\appendices
+\section{Team Workload Breakdown}
+\label{app:workload}
+\guide{Record actual completed contributions. The names, IDs and team name
+come from the supplied progress slides. Confirm them before submission.
+Only Sun Zekun's core-preprocessing responsibility is prefilled from the
+conversation; complete all other entries from the team's actual workload.}
+\begin{table*}[t]
+  \caption{Team workload and report contributions.}
+  \label{tab:workload}
+  \centering
+  \small
+  \begin{tabularx}{\textwidth}{llXX}
+    \toprule
+    Member & Student ID & Main project responsibilities & Report contributions \\
+    \midrule
+    Li Chengxuan & A0352428A & \pending & \pending \\
+    Mao Huanqing & A0257997Y & \pending & \pending \\
+    Sun Zekun & A0351314R & Core data preprocessing; complete other actual
+    responsibilities & Core preprocessing; complete actual writing/review tasks \\
+    Zhang Ziqing & A0223145R & \pending & \pending \\
+    \bottomrule
+  \end{tabularx}
+\end{table*}
+
+\section{Supplementary Details}
+\label{app:supplement}
+\guide{Use sparingly. Include only the full hyperparameter search/configuration
+table, a compact feature dictionary, or supplementary EDA/error tables that
+help reproduce or elaborate the main results. Do not move the final model
+definition, validation design, main results or essential interpretation out
+of the main text. The paper must remain comprehensible without this appendix.}
+
+\end{document}
