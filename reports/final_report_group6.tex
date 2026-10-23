@@ -85,8 +85,8 @@
 \maketitle
 
 \begin{abstract}
-Predicting Singapore HDB rents requires accounting for changing market
-conditions as well as property and location characteristics. We analysed
+Singapore HDB rents vary with market conditions, property characteristics
+and location. We analysed
 150,000 labelled rental records from January 2021 to March 2025 and developed
 features for 50,000 future test records. Exploratory analysis motivated
 category normalisation, invalid-source masking and chronological validation.
@@ -98,9 +98,9 @@ RMSE 458.740 SGD and MAE 334.412 SGD, reducing RMSE by 21.21\% relative
 to Ridge. Its mean underprediction was 13.551 SGD. School, mall and
 historical-rent additions did not meet our minimum improvement threshold.
 A 16-month diagnostic also favoured CatBoost, although its observations
-overlapped the other windows. The findings support nonlinear modelling
-and careful temporal evaluation, while snapshot amenities, subgroup errors
-and unavailable future labels limit conclusions about deployment accuracy.
+overlapped the other windows. These results favour nonlinear modelling and chronological evaluation.
+Amenity snapshots, subgroup errors and unavailable future labels limit
+what we can conclude about deployment accuracy.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -112,66 +112,62 @@ spatial auxiliary data
 \label{sec:introduction}
 % Approximately 0.6 pages in the supplied IEEE conference layout.
 
-\subsection{Motivation and Problem Context}
+\subsection{Motivation and problem context}
 Accommodation costs place a substantial financial burden on households in
-Singapore. As the course overview emphasises, renting can be a practical
-necessity for people who are unable or ineligible to purchase housing,
+Singapore. The course overview notes that renting can be necessary for people who are unable or ineligible to purchase housing,
 including singles, young couples waiting for a new flat, and foreign
 workers~\cite{data_source}. Renters need to judge what their budget can secure
 and compare asking rents across properties; landlords and real estate agents
-need realistic pricing references. These needs motivate our study of
-Housing \& Development Board (HDB) flats. Given a flat's characteristics and
+need realistic pricing references. We study rental prices for
+Housing \& Development Board (HDB) flats to help meet these needs. Given a flat's characteristics and
 approval month, we predict its monthly rent from historical observations and
 assess the reliability of predictions for later periods.
 
-This task presents three challenges. First, rental levels change over time:
-in the supplied training data, mean rent rises from SGD~2,121 in 2021 to
+This task presents three challenges. First, rental levels change over time: in
+the supplied training data, mean rent rises from SGD~2,121 in 2021 to
 SGD~3,036 in 2023, followed by much smaller changes in 2024 and early 2025.
 These descriptive averages also reflect the mix of properties observed, so
-they do not isolate a causal market effect. Nevertheless, the pattern makes
-continued extrapolation of an earlier growth trend questionable. Second,
-location and property characteristics are interdependent: town, street,
-flat type and floor area may encode overlapping information, while amenity
-features may contribute differently across models. Third, repeated feature
-vectors and inconsistent derived attributes require careful treatment.
-Without identifiers for individual flats or contracts, matching rows cannot
-be assumed to represent duplicate transactions.
+they do not isolate a causal market effect. The slowdown makes continued
+extrapolation of the earlier growth trend questionable. Second, location and
+property characteristics are interdependent: town, street, flat type and floor
+area may encode overlapping information, while amenity features may contribute
+differently across models. Third, repeated feature vectors and inconsistent
+derived attributes require careful treatment. Without identifiers for
+individual flats or contracts, matching rows cannot be assumed to represent
+duplicate transactions.
 
 Useful rental estimates must remain credible when the prediction period
 extends beyond the observed market conditions. An underestimated rent can
 mislead a tenant's budget, while an overestimated rent can distort property
-comparisons or pricing expectations. Moreover, low average error can conceal
+comparisons or pricing expectations. Low average error can also conceal
 poor performance for uncommon flat types or less represented locations.
 We therefore consider temporal calibration and subgroup errors alongside
-overall accuracy. This framing treats the model as a reference based on
-observable attributes, rather than a complete valuation of an individual
-flat's condition or contractual terms.
+overall accuracy. The model provides a reference based on observable attributes; it cannot
+fully account for an individual flat's condition or contractual terms.
 
-\subsection{Research Questions and Contributions}
+\subsection{Research questions and contributions}
 We address three questions: (1) how do temporal, spatial and property
 patterns inform preprocessing and rent prediction; (2) what additional
 predictive value do contextual and historical-rent features provide beyond
 the core attributes; and (3) which evaluated model performs most reliably
 on later observations, and where do its errors remain largest?
 
-Our work connects exploratory analysis to explicit preprocessing decisions,
-compares alternative treatments of repeated records, and evaluates Ridge
+We use exploratory analysis to guide preprocessing, compare treatments of
+repeated records, and evaluate Ridge
 regression, CatBoost and a multilayer perceptron under chronological
 validation. Feature comparisons retain the same individual validation
 records and original rents. Data-dependent transformations and rental-history
 summaries are constructed from the training portion of each experiment.
-The selected model is assessed through later-period errors and a longer
-forecasting-horizon diagnostic, rather than through an aggregate score alone.
-These contributions concern the application and evaluation of existing
-methods; their value lies in identifying which choices support reliable
-prediction for this dataset.
+We assess the selected model using aggregate scores, later-period errors
+and a longer forecasting-horizon diagnostic. We apply existing methods
+to identify which modelling and evaluation choices work well for this dataset.
 
-\section{Data and Problem Formulation}
+\section{Data and problem formulation}
 \label{sec:data}
 % Approximately 0.4 pages, including Table I.
 % Dataset facts below were verified against the repository CSVs and metadata.
 
-\subsection{Prediction Task and Core Data}
+\subsection{Prediction task and core data}
 The CS5228 competition supplies labelled training records and an unlabelled
 test set~\cite{data_source}. We learn a regression function $\hat y=f(x)$,
 where $y$ is \field{MONTHLY_RENT} in Singapore dollars (SGD). The ten
@@ -198,13 +194,13 @@ Section~\ref{sec:eda}.
   \end{tabularx}
 \end{localtable}
 
-As Table~\ref{tab:data} shows, the split is predominantly temporal: only
+The split is predominantly temporal (Table~\ref{tab:data}): only
 380 test records share March 2025 with the training period; all others are
 later. The maximum test horizon is 16 months beyond the last training month.
 We assess prediction error primarily with root mean squared error (RMSE) in
 SGD; the evaluation protocol is specified in Section~\ref{sec:experiments}.
 
-\subsection{Auxiliary Data Sources}
+\subsection{Auxiliary data sources}
 The course supplied six auxiliary datasets: HDB block metadata, Mass Rapid
 Transit (MRT) stations, schools, shopping malls, Certificate of Entitlement
 (COE) auction prices, and stock prices for Singapore companies. Building
@@ -220,11 +216,11 @@ how we processed these sources and decided which features to retain.
 % Keep the data summary before figures from the following section.
 \FloatBarrier
 
-\section{Exploratory Data Analysis and Preprocessing}
+\section{Exploratory data analysis and preprocessing}
 \label{sec:eda}
 % Completed exploratory analysis, preprocessing audits and experiment logs.
 
-\subsection{Target Distribution and Data Quality}
+\subsection{Target distribution and data quality}
 The 150,000 raw training records contain no missing cells. Monthly rent has
 a mean of SGD~2,719, a median of SGD~2,700, and a range of SGD~300 to SGD~7,600.
 Its skewness is 0.39. The interquartile-range rule flags 752 records
@@ -234,13 +230,12 @@ evaluation. Ridge and CatBoost learned from raw SGD targets; the MLP
 standardised targets within each training fold and converted predictions
 back to SGD. No logarithmic target transformation was applied.
 
-Two predictors have no variation: \field{FURNISHED} is always \field{yes},
-and \field{FEE} is always zero. We removed both. Raw completeness does not
-eliminate the need for missing-value handling: masking invalid ages and
-cleaning sentinels in the auxiliary tables introduce missing values later
-in the pipeline.
+Two predictors have no variation: \field{FURNISHED} is always \field{yes}, and
+\field{FEE} is always zero. We removed both. Missing-value handling is still
+needed because masking invalid ages and cleaning sentinels in the auxiliary
+tables introduce missing values later in the pipeline.
 
-\subsection{Temporal Patterns and Distribution Shift}
+\subsection{Temporal patterns and distribution shift}
 Fig.~\ref{fig:time} shows rapid rent growth followed by a flatter period.
 Mean rent rises from SGD~2,121 in 2021 to SGD~3,036 in 2023, then changes
 less in 2024 (SGD~3,110) and January to March 2025 (SGD~3,142).
@@ -259,7 +254,7 @@ specified in Section~\ref{sec:experiments}.
   \label{fig:time}
 \end{figure}
 
-\subsection{Spatial and Property Patterns}
+\subsection{Spatial and property patterns}
 Rent varies across both property types and towns. After normalising flat-type
 labels, median rent increases from SGD~2,100 for two-room flats to SGD~3,000
 for five-room and executive flats (Fig.~\ref{fig:flat_type_eda}). Floor area
@@ -280,7 +275,7 @@ Rent per square metre was used only for EDA because it contains the target.
   \label{fig:flat_type_eda}
 \end{figure}
 
-\subsection{Core Cleaning and Feature Construction}
+\subsection{Core cleaning and feature construction}
 \label{sec:core_features}
 We applied Unicode NFKC normalisation, lowercasing, and whitespace cleanup
 to categorical fields, removed spaces within block identifiers, and merged
@@ -304,10 +299,9 @@ months. Validation and test histories use only known training rents, with
 summaries held fixed throughout each prediction window. These are candidate
 features derived from rental records, not external auxiliary data.
 
-Table~\ref{tab:preprocessing} summarises the cleaning decisions. We checked
-the uncertain choices through the preprocessing audit below rather than
-assuming that fewer records or more elaborate imputation would improve
-prediction.
+Table~\ref{tab:preprocessing} summarises the cleaning decisions. We used
+the preprocessing audit to check whether removing records or using more
+elaborate imputation improved prediction.
 
 \begin{localtable}
   \caption{EDA findings and the corresponding preprocessing decisions.}
@@ -331,7 +325,7 @@ prediction.
   \end{tabularx}
 \end{localtable}
 
-\subsection{Preprocessing Audit and Policy Selection}
+\subsection{Preprocessing audit and policy selection}
 \label{sec:preprocessing_audit}
 The preprocessing audit compared three record policies and two missing-value
 treatments using Ridge with $\alpha=10$ and the same 35 core/HDB/MRT features.
@@ -410,12 +404,12 @@ of the best missing-value treatment. Retention with masking/recovery scored
 600.808 SGD, only 0.016 SGD above exact removal with the same treatment.
 Its score was also 0.005 SGD above retention with median-only handling.
 We selected it to preserve potentially valid transactions and mask invalid
-source years, rather than claiming an accuracy improvement from imputation.
+source years. Imputation did not produce a meaningful accuracy improvement.
 These tolerances are practical selection rules, not significance thresholds.
 The final pipeline therefore retains all 150,000 training records and every
 one of the 50,000 test IDs.
 
-\subsection{Auxiliary Construction and Record Integrity}
+\subsection{Auxiliary construction and record integrity}
 \label{sec:auxiliary_processing}
 The 9,464 HDB block records have unique normalised town, block, and street
 keys, with 100\% address coverage in train and test. A many-to-one join adds
@@ -449,10 +443,10 @@ Section~\ref{sec:finalmodel}. Joins check key uniqueness, row counts, and
 matching IDs/dates so that feature construction preserves the evaluation
 population.
 
-\section{Data Mining Methods and Model Development}
+\section{Data mining methods and model development}
 \label{sec:methods}
 
-\subsection{Reference Predictor and Ridge Baseline}
+\subsection{Reference predictor and Ridge baseline}
 The initial reference predictor used the historical median rent
 for each town/flat-type pair, falling back to the town median, flat-type
 median, and overall training median when necessary. This provides a simple
@@ -460,7 +454,7 @@ location/size reference but does not explicitly represent market changes.
 Its original evaluation removed exact duplicate records, so its scores are
 not included in the common-population comparison below.
 
-Ridge regression served as the main reference for the improvement experiments.
+We used Ridge regression as the main reference for the improvement experiments.
 It minimises squared prediction error with an $L_2$ coefficient penalty,
 which helps control correlated inputs~\cite{ridge_reference}. Its sparse
 one-hot representation makes it inexpensive to fit and useful for checking
@@ -469,7 +463,7 @@ predictors, standardised numeric inputs, and untransformed SGD rents. We
 selected $\alpha=10$ over 100 using the earlier validation windows. Fitting
 used the LSQR solver with tolerance $10^{-4}$ and at most 10,000 iterations.
 
-\subsection{Candidate Models}
+\subsection{Candidate models}
 \subsubsection{CatBoost}
 We evaluated gradient-boosted trees to represent nonlinear relationships
 and interactions among time, location and property descriptors. CatBoost
@@ -495,7 +489,7 @@ portion. Seeds 42, 123 and 2026 assessed stability; seed 42 was fixed for
 model selection. Architecture, learning rate and regularisation were not
 grid-searched. The MLP used the 35 base predictors without feature-group tests.
 
-\subsection{Completed Model Improvements}
+\subsection{Completed model improvements}
 \label{sec:improvements}
 The preprocessing audit retained original transactions and masked invalid
 source attributes as described in Section~\ref{sec:preprocessing_audit}.
@@ -523,12 +517,11 @@ $\{0.001,0.005,0.01,0.05,0.08\}$, and leaf regularisation $\{3,5\}$.
 An added group was retained only if the best group reduced mean validation
 RMSE by at least 1 SGD relative to base features. With the selected tree
 parameters, history reduced RMSE by 0.889 SGD, so the simpler base feature
-set was retained. This tolerance expresses a practical preference for
-simplicity, not a statistical significance test.
+set was retained. This tolerance favours simplicity; it is not a statistical significance test.
 
-\subsection{Final Model Specification}
+\subsection{Final model specification}
 \label{sec:finalmodel}
-The earlier-fold selection chose a single CatBoost model with
+The earlier validation folds selected a single CatBoost model with
 35 core/HDB/MRT predictors, depth 8, learning rate 0.05, and leaf
 regularisation 3. It retained all training records and used invalid-source
 masking/address recovery. School, mall and rental-history additions were
@@ -542,12 +535,12 @@ records through March 2025 and predicted the 50,000 test records. The final
 feature contract contains 35 predictors, including eleven categorical
 fields; row IDs and parsed dates serve only alignment and validation.
 
-\section{Experimental Setup}
+\section{Experimental setup}
 \label{sec:experiments}
 
-\subsection{Chronological Validation}
-Random splitting could mix later market conditions into training. Instead,
-we used expanding training windows and evaluated complete later months
+\subsection{Chronological validation}
+We used expanding training windows and evaluated complete later months
+to avoid mixing later market conditions into training through random splitting
 (Table~\ref{tab:folds}). There was no gap between training and evaluation.
 Preprocessing, parameter, feature and model selection used only the two
 six-month windows. The selected configurations were frozen before evaluating
@@ -577,7 +570,7 @@ future test horizon in duration, but covers different market conditions.
 It overlaps the selection and later diagnostic windows and is neither
 independent evidence nor an additional tuning window.
 
-\subsection{Training-Fold Preprocessing and Leakage Controls}
+\subsection{Training-fold preprocessing and leakage controls}
 All data-dependent transformations were fitted within the relevant training
 portion. Ridge and MLP used numeric median imputation and standardisation,
 categorical mode imputation, and one-hot encoding with minimum frequency 10.
@@ -590,7 +583,7 @@ and MLP-epoch selection; its preprocessing was fitted on the preceding
 months. Models were then refitted on the complete outer training portion.
 Evaluation labels never entered these transformations or iteration selection.
 
-\subsection{Hyperparameter Selection and Reproducibility}
+\subsection{Hyperparameter selection and reproducibility}
 Selection minimised the unweighted mean RMSE of the two earlier windows.
 Ridge evaluated $\alpha\in\{10,100\}$; CatBoost evaluated the 20-setting grid
 before four feature additions. Each configuration was scored on both
@@ -609,16 +602,15 @@ evaluation use the shared implementation in
 record fold sizes, parameters, selected iterations and runtime. The saved
 refit environment records Python 3.11.5, NumPy 1.26.4, pandas 2.1.4,
 scikit-learn 1.2.2 and CatBoost 1.2.10, together with SHA-256 hashes of the
-raw training data, test data and shared implementation. The current refit
-metadata and processed-data contract agree with the selected model;
-the recorded hashes match the repository inputs and implementation.
-The final full-data fit and test prediction took approximately 81.4 seconds.
-Earlier-fold base
-fits took approximately 1.2--1.5 seconds for selected Ridge, 25.9--38.6
-seconds for selected CatBoost, and 5.2--8.5 seconds for seed-42 MLP;
-these are observed pipeline runtimes rather than hardware-normalised benchmarks.
+raw training data, test data and shared implementation. The refit metadata and
+processed-data contract agree with the selected model; the recorded hashes
+match the repository inputs and implementation. The final full-data fit and
+test prediction took approximately 81.4 seconds. Base fits in the earlier
+folds took approximately 1.2--1.5 seconds for selected Ridge, 25.9--38.6
+seconds for selected CatBoost, and 5.2--8.5 seconds for seed-42 MLP; these are
+observed pipeline runtimes rather than hardware-normalised benchmarks.
 
-\subsection{Metrics and Controlled Comparisons}
+\subsection{Metrics and controlled comparisons}
 For original rents $y_i$ and predictions $\hat y_i$, we report RMSE,
 the square root of mean squared prediction error~\cite{rmse_reference},
 and MAE:
@@ -636,18 +628,17 @@ rents. The initial baseline's deduplicated population is excluded from these
 common-population tables. We did not estimate confidence intervals or
 claim statistical significance from small score differences.
 
-\section{Final Results and Discussion}
+\section{Final results and discussion}
 \label{sec:results}
 
-\subsection{Overall Model Comparison}
+\subsection{Overall model comparison}
 Table~\ref{tab:mainresults} compares the frozen configurations on 25,984
 later observations. CatBoost achieved RMSE 458.740 SGD versus 582.264 SGD
 for Ridge, a 21.21\% reduction, and reduced MAE from 432.274 to 334.412 SGD.
 Its earlier-fold mean RMSE was also lowest: 547.372 SGD, compared with
-600.808 for Ridge and 609.986 for seed-42 MLP. These earlier scores determined
-the winner. The MLP's later RMSE of 469.729 SGD was close to CatBoost despite
-its weaker earlier result; this change in ranking cautions against judging
-models from one period alone.
+600.808 for Ridge and 609.986 for seed-42 MLP. We selected the model using these earlier scores. The MLP's later RMSE of 469.729 SGD was close to CatBoost despite
+its weaker earlier result; the change in ranking shows why
+we evaluated more than one period.
 
 \begin{localtable}
   \caption{July 2024--March 2025 comparison (25,984 original rows).
@@ -665,14 +656,14 @@ models from one period alone.
   \end{tabularx}
 \end{localtable}
 
-\subsection{Performance across Time Periods}
+\subsection{Performance across time periods}
 Table~\ref{tab:periodresults} shows that CatBoost improved on Ridge in both
 selection periods and the later diagnostic. Ridge's RMSE was similar across
 these periods, but its earlier-fold bias changed from $-72.7$ to $-300.3$
 SGD, consistent with excessive extrapolation as rent growth flattened.
 CatBoost's later-period improvement coincided with much smaller aggregate
-bias. This is observed calibration behaviour, not evidence that a particular
-input or mechanism caused the difference.
+bias. These calibration differences do not establish which inputs or mechanisms
+caused the improvement.
 
 \begin{localtable}
   \caption{RMSE (SGD) by evaluation period. The final row overlaps the others.}
@@ -697,17 +688,16 @@ $-263.517$ SGD. The gain persists in this longer diagnostic, but a different
 origin and overlapping observations prevent treating it as an independent
 estimate of future competition accuracy.
 
-\subsection{Controlled Feature Comparisons}
+\subsection{Controlled feature comparisons}
 \label{sec:ablation}
-Table~\ref{tab:ablation} reports completed feature additions with selected
-parameters held fixed. Ridge gained no useful improvement from any group.
+We held the selected parameters fixed when testing feature additions
+(Table~\ref{tab:ablation}). Ridge gained no useful improvement from any group.
 For CatBoost, schools and malls separately increased mean RMSE, their
 combination reduced it by 0.387 SGD, and history reduced it by 0.889 SGD.
-Neither reduction met the 1 SGD retention rule. Consequently, the final
-selection uses the existing HDB/MRT inputs without these additions. The
-comparison demonstrates that additional predictors do not automatically
-improve forecasting. It does not isolate HDB/MRT's contribution to CatBoost:
-no core-only CatBoost removal experiment was completed.
+Neither reduction met the 1 SGD retention rule. The final model therefore uses the existing HDB/MRT inputs without these
+additions. The tests show that adding predictors does not necessarily
+improve forecasting. We did not test CatBoost with core features alone,
+so we cannot isolate the contribution of HDB/MRT inputs.
 
 \begin{localtable}
   \caption{Earlier-fold mean RMSE (SGD) at fixed selected parameters.
@@ -728,11 +718,11 @@ no core-only CatBoost removal experiment was completed.
   \end{tabularx}
 \end{localtable}
 
-\subsection{Error Analysis and Model Interpretation}
+\subsection{Error analysis and model interpretation}
 Ridge overpredicted later-block rent by 337.8 SGD on average, with monthly
 bias between $-422.4$ and $-183.8$ SGD. CatBoost's overall underprediction
-was 13.6 SGD, with monthly bias between $-12.2$ and 39.3 SGD. Thus, its
-aggregate RMSE gain accompanied substantially better temporal calibration.
+was 13.6 SGD, with monthly bias between $-12.2$ and 39.3 SGD. Its lower aggregate RMSE was accompanied by substantially better temporal
+calibration.
 
 Errors still varied across subgroups. CatBoost RMSE was 432.5 SGD for
 three-room flats (8,562 rows), 462.6 for four-room flats (9,468), 469.4 for
@@ -754,7 +744,7 @@ or recording error. It remains in evaluation. No feature-attribution
 analysis was completed, so model improvements cannot be assigned to causal
 location or amenity effects.
 
-\subsection{Test Predictions and Submission Status}
+\subsection{Test predictions and submission status}
 \label{sec:submission}
 The final \field{submissions/catboost_improved.csv} contains 50,000 finite
 predictions in exactly the sample-submission ID order. It was produced by
@@ -767,7 +757,7 @@ validation rebuilds data-dependent transformations inside each fold.
 No verified competition score is available in the experiment artifacts,
 so the reported accuracy remains internal chronological performance.
 
-\subsection{Limitations of the Findings}
+\subsection{Limitations of the findings}
 Unit-level attributes and contract details are unavailable, leaving
 substantial unexplained variation and uncertainty about repeated records.
 Amenity snapshots lack complete opening histories, while the MRT proxy does
@@ -775,16 +765,16 @@ not reconstruct station availability month by month. Historical summaries
 are frozen during forecasting and can become stale. CatBoost's long-horizon
 gain does not guarantee extrapolation under future market changes.
 
-Model and feature selection reused two windows for multiple comparisons,
-and the later block had already been inspected in the baseline work.
-The overlapping long-horizon diagnostic adds a different forecasting origin,
-not independent replication. The 500-tree cap also constrains the CatBoost
-comparison: all configurations with learning rates 0.001, 0.005 and 0.01
-used the full budget in both selection windows. Their higher errors may
-partly reflect insufficient iterations rather than intrinsically unsuitable
-learning rates. Parameters were selected on base features before feature
-additions, so the experiment does not exhaustively search parameter/feature
-combinations.
+Model and feature selection reused two windows for multiple comparisons, and
+the later block had already been inspected in the baseline work. The
+long-horizon diagnostic uses a different forecasting origin, but its
+overlapping observations do not provide independent replication. The 500-tree
+cap also constrains the CatBoost comparison: all configurations with learning
+rates 0.001, 0.005 and 0.01 used the full budget in both selection windows.
+Their higher errors may partly reflect insufficient iterations rather than
+intrinsically unsuitable learning rates. Parameters were selected on base
+features before feature additions, so the experiment does not exhaustively
+search parameter/feature combinations.
 
 MLP results reflect a fixed architecture and
 limited optimisation checks; mean RMSE varied from 609.986 to 639.407 SGD
@@ -796,9 +786,8 @@ inferred from file integrity or the internal diagnostic scores.
 \section{Conclusion}
 \label{sec:conclusion}
 % Approximately 0.3 pages.
-Our analysis connected changing rental levels, inconsistent category labels
-and uncertain repeated records to explicit preprocessing and validation
-choices. Retaining potentially legitimate observations and masking invalid
+Changing rental levels, inconsistent category labels and uncertain repeated
+records guided our preprocessing and validation choices. Retaining potentially legitimate observations and masking invalid
 source attributes preserved the evaluation population; the audit did not
 show a meaningful accuracy gain from address recovery. Among the evaluated
 models, CatBoost with 35 core/HDB/MRT predictors performed best on the two
@@ -809,9 +798,9 @@ threshold, so most of the measured improvement came from changing the model.
 The longer diagnostic supported this result across a 16-month horizon,
 but overlapped the other evaluation windows. Larger errors for executive
 flats and sparsely observed properties, incomplete amenity histories and
-unavailable future test labels constrain generalisation. The selected model
-provides a useful attribute-based rental reference whose accuracy must be
-assessed across periods and subgroups as market conditions change.
+unavailable future test labels constrain generalisation. The selected model provides an attribute-based rental reference. Its accuracy
+needs continued assessment across periods and subgroups as market conditions
+change.
 
 % References begin on a separate page so that the main-text boundary is clear.
 % Check the compiled main text ends within eight pages after replacing prompts.
@@ -858,14 +847,14 @@ assessed across periods and subgroups as market conditions change.
   Accessed: Oct. 10, 2026.
 \end{thebibliography}
 
-\section*{AI Declaration}
+\section*{AI declaration}
 We used GPT-6-Sol, GPT-6-Astra and GPT-6.1-Sol for file formatting, grammar
-correction and put up README descriptions for our notebooks. We declare
-our ideas, analysis and model selections are original.
+correction and writing README descriptions for our notebooks. Our ideas,
+analysis and model selections are original.
 
 \clearpage
 \appendices
-\section{Team Workload Breakdown}
+\section{Team workload breakdown}
 \label{app:workload}
 All members contributed to discussion and outline development for both the
 project work and the report. Table~\ref{tab:workload} records their principal
@@ -886,14 +875,13 @@ implementation and writing responsibilities.
   \end{tabularx}
 \end{localtable}
 
-\section{Supplementary Details}
+\section{Supplementary details}
 \label{app:supplement}
-The following tables expand the completed model-search and error analyses.
-They use the saved outputs of the CatBoost model, MLP model and final
-evaluation workflows. All errors are in SGD. Selection-window RMSEs use
+The supplementary model-search and error analyses use saved outputs from
+the CatBoost, MLP and final evaluation workflows. All errors are in SGD. Selection-window RMSEs use
 original individual rents; their mean gives equal weight to the two windows.
 
-\subsection{Complete CatBoost Parameter Search}
+\subsection{Complete CatBoost parameter search}
 Table~\ref{tab:fullgrid} reports all 20 base-feature configurations, extending
 the tuning summary in Section~\ref{sec:improvements}. Depth 8, learning rate
 0.05 and leaf regularisation 3 gave the lowest mean RMSE. The shared
@@ -932,7 +920,7 @@ Depth & Rate & $L_2$ & H2 2023 & H1 2024 & Mean \\
   \end{tabularx}
 \end{localtable}
 
-\subsection{MLP Seed Stability}
+\subsection{MLP seed stability}
 Table~\ref{tab:mlpseeds} expands the seed-stability comparison. Seed 42 was
 fixed for model selection; the other seeds are diagnostics and were not
 used to choose a best seed. The spread in mean RMSE limits general claims
@@ -953,7 +941,7 @@ Seed & H2 2023 & H1 2024 & Mean \\
   \end{tabularx}
 \end{localtable}
 
-\subsection{Selected-Model Errors by Flat Type}
+\subsection{Selected-model errors by flat type}
 Table~\ref{tab:flaterrors} provides the complete flat-type breakdown underlying
 Section~\ref{sec:results}. Counts sum to the 25,984 original later-block
 observations. Bias is actual minus predicted rent, so a positive value

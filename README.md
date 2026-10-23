@@ -2,7 +2,7 @@
 
 This repository contains the project datasets, exploratory analysis, preprocessing,
 and chronological model comparisons for Singapore HDB rental prediction.
-The main findings are in `reports/report_structure.tex` and its compiled PDF.
+The main findings are in `reports/final_report_group6.tex` and its compiled PDF.
 
 ## Environment setup
 
@@ -205,14 +205,14 @@ with the results.
    ```bash
    python scripts/create_report_figures.py
    cd reports
-   pdflatex -interaction=nonstopmode -halt-on-error report_structure.tex
-   pdflatex -interaction=nonstopmode -halt-on-error report_structure.tex
+   pdflatex -interaction=nonstopmode -halt-on-error final_report_group6.tex
+   pdflatex -interaction=nonstopmode -halt-on-error final_report_group6.tex
    cd ..
    ```
 
    Install a TeX distribution providing pdfLaTeX, or use Overleaf with the entire
    `reports/` directory, including `IEEEtran.cls` and `figures/`. Alternatively,
-   run `tectonic reports/report_structure.tex`; Tectonic resolves references
+   run `tectonic reports/final_report_group6.tex`; Tectonic resolves references
    automatically. LaTeX uses the figures relative to the source directory.
    Experiment execution regenerates data and scores; the report's prose and
    tables are maintained manually and should be checked against those outputs.

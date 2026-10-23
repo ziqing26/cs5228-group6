@@ -1,12 +1,12 @@
 # CS5228 rental prediction report
 
-`report_structure.tex` contains the main report, abstract, conclusion and AI
-declaration. `report_structure.pdf` is its compiled version. `IEEEtran.cls`
+`final_report_group6.tex` contains the main report, abstract, conclusion and AI
+declaration. `final_report_group6.pdf` is its compiled version. `IEEEtran.cls`
 comes from the supplied course template; figures live in `figures/`.
 
 From the repository root, regenerate figures with
 `python scripts/create_report_figures.py`. Compile with
-`tectonic reports/report_structure.tex`, or run pdfLaTeX twice from `reports/`.
+`tectonic reports/final_report_group6.tex`, or run pdfLaTeX twice from `reports/`.
 Upload the whole report directory to Overleaf when compiling there.
 
 The root README documents environment setup, prerequisite preprocessing,
